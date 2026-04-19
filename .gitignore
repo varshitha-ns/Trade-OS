@@ -26,3 +26,7 @@ build/
 .vscode/
 .DS_Store
 Thumbs.db
+
+backend/app/generated_docs/
+backend/escrow_ledger.db
+*.db

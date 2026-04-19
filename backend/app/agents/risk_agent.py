@@ -260,13 +260,90 @@ class RiskAgent:
         
         return min(max(aggregated_logistics_risk, 0.0), 10.0)
 
-    def calculate_compliance_risk(self, supplier: Dict[str, Any]) -> float:
+    def _scrape_and_evaluate_sanctions(self, query_target: str) -> float:
         """
-        Calculates Compliance Risk based on tariffs and trade restrictions.
+        Scrapes live search results for trade sanctions related to a country,
+        then uses the LLM to output a precise sanction penalty float.
+        """
+        import requests
+        from bs4 import BeautifulSoup
+        import os
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        import re
+        import urllib.parse
+        
+        try:
+            # 1. Scrape live DuckDuckGo HTML results (No API key needed)
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+            query = f"international trade sanctions embargo {query_target}"
+            url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(query)}"
+            
+            print(f"   [Risk Agent] Web-Scraping live news/sanctions for: '{query_target}'...")
+            res = requests.get(url, headers=headers, timeout=5)
+            soup = BeautifulSoup(res.text, "html.parser")
+            
+            # Extract top 5 search result snippets
+            results = soup.find_all('a', class_='result__snippet', limit=5)
+            headlines = "\n".join([r.get_text(strip=True) for r in results])
+            
+            if not headlines:
+                print("   [Risk Agent] Warning: Web Scraper returned empty results. Assuming risk neutral.")
+                return 0.0
+
+            # 2. Ask Gemini to evaluate the live scraped text
+            if not os.getenv("GEMINI_API_KEY"):
+                return 0.0
+
+            llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.0)
+            prompt = f"""
+            You are a global compliance risk AI. Evaluate the following live web search snippets 
+            about international trade sanctions for: {query_target}.
+            
+            Search Snippets:
+            {headlines}
+            
+            Based ONLY on the context above, does this country face critical active trade sanctions, heavy embargos, or war?
+            If heavily sanctioned/embargoed (e.g., Iran, North Korea, Russia), return 8.0.
+            If minor or specific tariffs exist, return 3.0.
+            If no severe international sanctions are mentioned, return 0.0.
+            
+            Return ONLY the float number (e.g., 0.0 or 8.0). Do not output any text or reasoning.
+            """
+            response = llm.invoke(prompt).content.strip()
+            
+            # 3. Clean up and parse the LLM's number
+            number = re.search(r'[\d\.]+', response)
+            if number:
+                penalty = float(number.group(0))
+                print(f"   [Risk Agent] Live NLP Evaluation -> Sanction Penalty Score: {penalty}")
+                return min(max(penalty, 0.0), 8.0)
+                
+            return 0.0
+            
+        except Exception as e:
+            print(f"   [Risk Agent] Web-Scraping / AI compliance check failed: {e}")
+            return 0.0
+
+    def calculate_compliance_risk(self, trade: Dict[str, Any], supplier: Dict[str, Any]) -> float:
+        """
+        Calculates Compliance Risk based on tariffs and live autonomous web-scraping
+        for embargoes and trade restrictions.
         """
         tariff_rate = float(supplier.get("tariff_rate", 5.0))
         trade_restriction = 5.0 if supplier.get("trade_restriction_flag", False) else 0.0
         
+        # Determine the target entity string (e.g. buyer country or supplier country)
+        dest_country = str(trade.get("buyer_country", "")).strip()
+        origin_country = str(trade.get("supplier_country", "")).strip()
+        
+        # To avoid duplicating massive scrapes, check the main geographical target
+        # For an importer buying from somewhere, check the origin country.
+        # For an exporter selling to somewhere, check the destination country.
+        if dest_country and dest_country.lower() != "unknown":
+            trade_restriction += self._scrape_and_evaluate_sanctions(dest_country)
+        elif origin_country and origin_country.lower() != "unknown":
+            trade_restriction += self._scrape_and_evaluate_sanctions(origin_country)
+            
         risk = (tariff_rate / 2) + trade_restriction
         return min(max(risk, 0.0), 10.0)
 
@@ -309,7 +386,7 @@ class RiskAgent:
         supp_risk = round(self.calculate_supplier_risk(supplier_data), 2)
         fin_risk = round(self.calculate_financial_risk(trade_request, supplier_data), 2)
         log_risk = round(self.calculate_logistics_risk(trade_request), 2)
-        comp_risk = round(self.calculate_compliance_risk(supplier_data), 2)
+        comp_risk = round(self.calculate_compliance_risk(trade_request, supplier_data), 2)
         mkt_risk = round(self.calculate_market_risk(trade_request), 2)
         
         # 2. Aggregation Engine (Weighted Average)
@@ -320,6 +397,11 @@ class RiskAgent:
             (0.20 * comp_risk) +
             (0.15 * mkt_risk)
         )
+        
+        # 🚨 HARD GATEKEEPER OVERRIDE: Sanctions are illegal, not just "risky"
+        if comp_risk >= 8.0:
+            total_risk = 10.0
+        
         total_risk = round(total_risk, 2)
         
         # 3. Risk Classification

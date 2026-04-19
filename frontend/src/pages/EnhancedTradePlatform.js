@@ -47,11 +47,15 @@ const EnhancedTradePlatform = () => {
   });
   
   const [tradeDescription, setTradeDescription] = useState('');
+  const [catalogDescription, setCatalogDescription] = useState('');
+  const [smartCatalogItem, setSmartCatalogItem] = useState(null);
   const [parsedItem, setParsedItem] = useState(null);
+  const [exporterBuyerLeads, setExporterBuyerLeads] = useState(null);
   const [matchmakerResults, setMatchmakerResults] = useState(null);
   const [negotiationResult, setNegotiationResult] = useState(null);
   const [documentAgentResult, setDocumentAgentResult] = useState(null);
   const [riskResult, setRiskResult] = useState(null);
+  const [buyerRiskResult, setBuyerRiskResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [documentVerification, setDocumentVerification] = useState({
     business_registration: null,
@@ -300,7 +304,53 @@ const EnhancedTradePlatform = () => {
     }
   };
 
-  // Run matchmaker agent
+  // Exporter: Generate Smart Catalog
+  const generateCatalog = async () => {
+    if (!catalogDescription.trim()) return;
+    setLoading(true);
+    try {
+      const response = await fetch('http://localhost:8000/api/catalog/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description: catalogDescription })
+      });
+      const data = await response.json();
+      if (response.ok && data.catalog_item) {
+        setSmartCatalogItem(data.catalog_item);
+        // Auto trigger find buyers immediately if using orchestrator workflow
+      } else {
+        alert('Catalog Agent failed: ' + data.detail);
+      }
+    } catch (e) {
+      alert('Error: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Exporter: Find Buyers using Catalog Item
+  const findGlobalBuyers = async () => {
+    if (!smartCatalogItem) return;
+    setLoading(true);
+    setActiveTab('buyer-discovery');
+    try {
+      const response = await fetch('http://localhost:8000/api/matchmaker/find-buyers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(smartCatalogItem)
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setExporterBuyerLeads(data.leads || []);
+      }
+    } catch (e) {
+      alert('Error fetching buyers: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Run matchmaker agent (Importer Flow)
   const runMatchmaker = async () => {
     if (!parsedItem) {
       alert('Please parse a trade item first');
@@ -371,26 +421,32 @@ const EnhancedTradePlatform = () => {
   };
 
   // Run Document Agent
-  const runDocumentAgent = async (supplier) => {
+  const runDocumentAgent = async (targetEntity) => {
+    if (riskResult?.overall_risk === 'HIGH' || buyerRiskResult?.overall_risk === 'HIGH') {
+       alert("CRITICAL: Trade blocked by Compliance Gatekeeper. Automated document execution is disabled due to HIGH risk factors.");
+       return;
+    }
     setLoading(true);
     setActiveTab('document-agent');
     
-    // Create the Trade Context request payload
+    // Create the Trade Context request payload dynamically based on role
+    const isExporter = registrationData?.companyInfo?.business_type === 'exporter';
     const tradeData = {
-      trade_id: `TRD-${Math.floor(Math.random() * 10000)}`,
-      supplier_id: supplier.supplier_id,
-      buyer_id: `BUY-${registrationData.companyInfo.company_name.substring(0,5).toUpperCase() || 'ANON'}`,
-      exporter_country: supplier.country,
-      importer_country: registrationData.companyInfo.address.country || parsedItem?.destination_country || 'USA',
-      hs_code: parsedItem?.hs_code_suggestion || supplier.hs_code || '000000',
-      product_category: parsedItem?.product_category || 'General',
-      product_name: parsedItem?.product_name || supplier.company_name,
-      quantity: parsedItem?.quantity || 1000,
-      price: 5.5,
-      logistics_mode: 'Sea Freight', // Hardcoded default for demo
-      delivery_terms: 'FOB',
+      trade_id: `TRD-${Math.floor(Math.random() * 100000)}`,
+      supplier_id: isExporter ? (registrationData?.companyInfo?.company_name || "Self Supplier") : (targetEntity?.supplier_id || "Unknown Supplier"),
+      buyer_id: isExporter ? (targetEntity?.buyer_id || targetEntity?.company_name || "Unknown Buyer") : `BUY-${registrationData.companyInfo.company_name?.substring(0,5).toUpperCase() || 'ANON'}`,
+      exporter_country: isExporter ? (registrationData?.companyInfo?.address?.country || "Export Country") : (targetEntity?.country || "Exporter Country"),
+      importer_country: isExporter ? (targetEntity?.country || "Import Country") : (registrationData.companyInfo.address.country || parsedItem?.destination_country || 'USA'),
+      hs_code: parsedItem?.hs_code_suggestion || smartCatalogItem?.hs_code || targetEntity?.hs_code || '000000',
+      product_category: parsedItem?.product_category || smartCatalogItem?.category || 'General',
+      product_name: parsedItem?.product_name || smartCatalogItem?.product_name || targetEntity?.product_name || 'Commodity',
+      quantity: parsedItem?.quantity || smartCatalogItem?.quantity || targetEntity?.target_quantity || 1000,
+      price: negotiationResult?.final_agreed_price || 5000,
+      logistics_mode: 'Sea Freight', 
+      delivery_terms: 'CIF',
       payment_terms: 'LC'
     };
+
 
     try {
       const response = await fetch('http://localhost:8000/api/document-agent/process', {
@@ -409,6 +465,46 @@ const EnhancedTradePlatform = () => {
         alert('Document Agent failed: ' + (data.detail || 'Unknown error'));
         setActiveTab('matchmaker');
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Exporter: Autonomous Pitch Generator
+  const runExporterPitch = async (buyer) => {
+    setLoading(true);
+    setActiveTab('outbound-quote');
+    
+    // Create the CIF Pitch Payload
+    const payload = {
+      product_name: smartCatalogItem?.product_name || buyer.product_name || "Commodity",
+      quantity: Math.min(parseFloat(smartCatalogItem?.quantity || 1), parseFloat(buyer.target_quantity || 1)),
+      unit: smartCatalogItem?.unit || "tons",
+      hs_code: smartCatalogItem?.hs_code || "000000",
+      buyer_id: buyer.buyer_id || "Unknown",
+      buyer_country: buyer.country || "Germany"
+    };
+
+    try {
+      const response = await fetch('http://localhost:8000/api/intelligence/generate-pitch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        setNegotiationResult({...data, buyer});
+      } else {
+        alert('Pitch Engine failed: ' + (data.detail || 'Unknown error'));
+        setActiveTab('buyer-discovery');
+      }
+    } catch (error) {
+      alert('Error parsing via intelligence pipeline: ' + error.message);
+      setActiveTab('buyer-discovery');
     } finally {
       setLoading(false);
     }
@@ -439,6 +535,12 @@ const EnhancedTradePlatform = () => {
           setActiveTab('parser');
           if (data.action_target) {
             setTradeDescription(`I want to export 5 tons of ${data.action_target}`);
+          }
+        } else if (data.action_type === 'execute_catalog_generation') {
+          setActiveTab('catalog');
+          if (data.action_target) {
+            setCatalogDescription(data.action_target);
+            // Auto trigger backend catalog gen via Orchestrator state hook
           }
         }
       } else {
@@ -477,17 +579,32 @@ const EnhancedTradePlatform = () => {
   const [originPort, setOriginPort] = useState("");
   const [destinationPort, setDestinationPort] = useState("");
 
-  // Auto-fill ports when supplier is chosen
+  // Auto-fill ports dynamically when Trade Context is acquired
   React.useEffect(() => {
-    if (negotiationResult?.supplier?.country && !originPort) {
-      setOriginPort(`${negotiationResult.supplier.country} Port`);
+    const isExporter = registrationData?.companyInfo?.business_type === 'exporter';
+    
+    if (isExporter) {
+      // Exporter Flow: Origin is me, Destination is the Buyer Lead
+      if (registrationData?.companyInfo?.address?.country && !originPort) {
+        setOriginPort(`${registrationData.companyInfo.address.country} Port`);
+      }
+      
+      if (negotiationResult?.buyer?.country && !destinationPort) {
+        setDestinationPort(`${negotiationResult.buyer.country}`);
+      }
+    } else {
+      // Importer Flow: Origin is the Supplier, Destination is me
+      if (negotiationResult?.supplier?.country && !originPort) {
+        setOriginPort(`${negotiationResult.supplier.country} Port`);
+      }
+      
+      if (registrationData?.companyInfo?.address?.city && !destinationPort) {
+        setDestinationPort(`${registrationData.companyInfo.address.city} Port`);
+      } else if (parsedItem?.destination_country && !destinationPort) {
+        setDestinationPort(`${parsedItem.destination_country} Port`);
+      }
     }
-    if (registrationData?.companyInfo?.address?.city && !destinationPort) {
-      setDestinationPort(`${registrationData.companyInfo.address.city} Port`);
-    } else if (parsedItem?.destination_country && !destinationPort) {
-      setDestinationPort(`${parsedItem.destination_country} Port`);
-    }
-  }, [negotiationResult, registrationData, parsedItem]);
+  }, [negotiationResult, registrationData, parsedItem, originPort, destinationPort]);
 
   // Trigger real Risk Agent backend API
   const runRiskAgent = async () => {
@@ -496,8 +613,8 @@ const EnhancedTradePlatform = () => {
     try {
       const supplierName = negotiationResult?.supplier?.company_name || "Unknown";
       const supplierId = negotiationResult?.supplier?.supplier_id || "sup_001";
-      const supplierCountry = parsedItem?.origin_country || negotiationResult?.supplier?.country || "China";
-      const buyerCountry = parsedItem?.destination_country || registrationData?.companyInfo?.address?.country || "India";
+      const supplierCountry = originPort || parsedItem?.origin_country || negotiationResult?.supplier?.country || "China";
+      const buyerCountry = destinationPort || parsedItem?.destination_country || registrationData?.companyInfo?.address?.country || "India";
       
       const tradePayload = {
         supplier_id: supplierId,
@@ -528,6 +645,45 @@ const EnhancedTradePlatform = () => {
     } catch (err) {
       console.error(err);
       alert("Failed to connect to Risk Agent Backend. Is the server running?");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Exporter: Trigger Real Risk Agent for Buyer
+  const evaluateBuyerRisk = async (buyer) => {
+    setLoading(true);
+    setBuyerRiskResult(null);
+    try {
+      const tradePayload = {
+        supplier_id: registrationData?.companyInfo?.company_name || "Exporter HQ",
+        country: originPort || registrationData?.companyInfo?.address?.country || "Export Country",
+        buyer_country: destinationPort || buyer.country || "Import Country",
+        hs_code: smartCatalogItem?.hs_code || "000000",
+        price: 1500.0, // Mock base line if no pitch generated
+        payment_terms: "Advance", // Strict default to measure risk
+        buyer_port: destinationPort || buyer.country || "Import Country",
+        supplier_port: originPort || registrationData?.companyInfo?.address?.country || "Export Port"
+      };
+
+      const res = await fetch('http://localhost:8000/api/risk/assess-risk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(tradePayload)
+      });
+      
+      const data = await res.json();
+      if (data.status === 'success') {
+        setBuyerRiskResult({
+          companyName: buyer.company_name || buyer.buyer_id,
+          ...data.risk_report
+        });
+      } else {
+        alert("Risk Agent failed: " + data.detail);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to connect to Risk Agent Backend.");
     } finally {
       setLoading(false);
     }
@@ -788,14 +944,21 @@ const EnhancedTradePlatform = () => {
         padding: '0 10px',
         overflowX: 'auto'
       }}>
-        {[
+        {(registrationData.companyInfo.business_type === 'exporter' ? [
           { id: 'registration', icon: '👤', label: 'Registration & Verification' },
-          { id: 'parser', icon: '', label: 'Trade Parser' },
-          { id: 'matchmaker', icon: '', label: 'Matchmaker Agent' },
-          { id: 'negotiator', icon: '', label: 'Market & Negotiation Agent' },
-          { id: 'document-agent', icon: '', label: 'Document Agent' },
-          { id: 'logistics-agent', icon: '', label: 'Logistics Agent' }
-        ].map(tab => (
+          { id: 'catalog', icon: '📦', label: 'Catalog & Inventory' },
+          { id: 'buyer-discovery', icon: '🔍', label: 'Buyer Matchmaker' },
+          { id: 'credit-risk', icon: '🛡️', label: 'Buyer Credit Risk' },
+          { id: 'outbound-quote', icon: '✈️', label: 'Outbound Quotes' },
+          { id: 'doc-generation', icon: '📄', label: 'Document Generation' }
+        ] : [
+          { id: 'registration', icon: '👤', label: 'Registration & Verification' },
+          { id: 'parser', icon: '📝', label: 'Trade Parser' },
+          { id: 'matchmaker', icon: '🤝', label: 'Supplier Matchmaker' },
+          { id: 'negotiator', icon: '💬', label: 'Market & Negotiation Agent' },
+          { id: 'document-agent', icon: '📄', label: 'Document Verification' },
+          { id: 'logistics-agent', icon: '🚢', label: 'Inbound Logistics' }
+        ]).map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
@@ -1798,7 +1961,7 @@ const EnhancedTradePlatform = () => {
                       </div>
                       <div style={{ padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
                         <span style={{ color: '#94a3b8', marginRight: '8px' }}>•</span> 
-                        <strong>Est. Cost:</strong> ₹{Math.round(route.metrics.estimated_cost_usd * 83.5).toLocaleString('en-IN')}
+                        <strong>Est. Cost:</strong> ₹{(route.metrics.estimated_cost_inr || (route.metrics.estimated_cost_usd * 83.5)) ? Math.round(route.metrics.estimated_cost_inr || (route.metrics.estimated_cost_usd * 83.5)).toLocaleString('en-IN') : '0'}
                       </div>
                       <div style={{ padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
                         <span style={{ color: '#94a3b8', marginRight: '8px' }}>•</span> 
@@ -1863,6 +2026,241 @@ const EnhancedTradePlatform = () => {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------------------- */}
+      {/* EXPORTER SPECIFIC WORKFLOW TABS */}
+      {/* ------------------------------------------------------------------------- */}
+
+      {/* Exporter: Catalog & Inventory Tab */}
+      {activeTab === 'catalog' && (
+        <div style={{ border: '2px solid #0d6efd', borderRadius: '10px', padding: '30px', backgroundColor: '#f8f9fa' }}>
+          <h2 style={{ color: '#0d6efd', marginBottom: '20px' }}>Product Catalog & Inventory Engine</h2>
+          <p style={{ color: '#6c757d' }}>Define what you want to sell. TradeOS AI will auto-classify HS Codes and check export compliance.</p>
+          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', border: '1px solid #dee2e6' }}>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '5px' }}>Product Description</label>
+              <textarea 
+                value={catalogDescription}
+                onChange={e => setCatalogDescription(e.target.value)}
+                placeholder="e.g., High-Quality organic turmeric powder, 5 tons available..." 
+                style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ced4da', minHeight: '80px' }}>
+              </textarea>
+            </div>
+            <button disabled={loading} onClick={generateCatalog} style={{ backgroundColor: loading ? '#6c757d' : '#0d6efd', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '5px', cursor: 'pointer' }}>
+              {loading ? 'AI Parsing...' : 'Generate Smart Catalog Listing'}
+            </button>
+
+            {smartCatalogItem && (
+              <div style={{ marginTop: '20px', backgroundColor: '#e9ecef', padding: '15px', borderRadius: '5px', border: '1px solid #ced4da' }}>
+                <h4 style={{ margin: '0 0 10px 0', color: '#0d6efd' }}>✅ Processed Catalog Item</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div><strong>Product:</strong> {smartCatalogItem.product_name}</div>
+                  <div><strong>HS Code:</strong> {smartCatalogItem.hs_code}</div>
+                  <div><strong>Category:</strong> {smartCatalogItem.category}</div>
+                  <div><strong>Quantity:</strong> {smartCatalogItem.quantity} {smartCatalogItem.unit}</div>
+                </div>
+                <div style={{ marginTop: '10px', fontSize: '12px', color: '#dc3545' }}>
+                  <strong>Compliance Requirements:</strong> {smartCatalogItem.compliance_requirements?.join(', ')}
+                </div>
+                <button 
+                  onClick={findGlobalBuyers} 
+                  style={{ marginTop: '15px', width: '100%', backgroundColor: '#28a745', color: 'white', padding: '10px', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
+                  Forward to Global Buyer Matchmaker ➜
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Exporter: Buyer Matchmaker Tab */}
+      {activeTab === 'buyer-discovery' && (
+        <div style={{ border: '2px solid #28a745', borderRadius: '10px', padding: '30px', backgroundColor: '#f8f9fa' }}>
+          <h2 style={{ color: '#28a745', marginBottom: '20px' }}>Global Buyer Matchmaker</h2>
+          <p style={{ color: '#6c757d' }}>AI has routed verified Global RFQs (Requests for Quotation) and matched buyers looking for your exact compliance and HS parameters.</p>
+          
+          {loading ? (
+             <div style={{ padding: '30px', textAlign: 'center', color: '#28a745', fontWeight: 'bold' }}>Executing Semantic Retrieval and Risk-Weighted Scoring Algorithms...</div>
+          ) : !exporterBuyerLeads ? (
+             <div style={{ padding: '30px', textAlign: 'center', color: '#6c757d' }}>No leads yet. Create a catalog first.</div>
+          ) : (
+            <div style={{ backgroundColor: '#d4edda', padding: '20px', borderRadius: '8px', border: '1px solid #c3e6cb', marginTop: '20px' }}>
+              <h4 style={{ color: '#155724', margin: '0 0 10px 0' }}>Top Intelligent Buyer Leads Found ({exporterBuyerLeads.length}):</h4>
+              
+              {exporterBuyerLeads.length === 0 && <p>No Active RFQs match your HS Code or semantic description.</p>}
+
+              {exporterBuyerLeads.map((buyer, idx) => (
+                <div key={idx} style={{ backgroundColor: 'white', padding: '15px', borderRadius: '5px', marginTop: '10px', border: '1px solid #28a745' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <strong style={{ fontSize: '18px' }}>{buyer.company_name} ({buyer.country})</strong>
+                      <p style={{ margin: '5px 0' }}>Looking to import: <strong>{buyer.target_quantity} {buyer.unit}</strong> of <strong>{buyer.product_name}</strong></p>
+                      <p style={{ margin: '5px 0', fontStyle: 'italic', color: '#6c757d', fontSize: '12px' }}>💡 AI Match: {buyer.match_explanation}</p>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '24px', fontWeight: 'bold', color: buyer.match_score >= 80 ? '#28a745' : '#ffc107', marginBottom: '10px' }}>
+                         {buyer.match_score}% Match
+                      </div>
+                      <button onClick={() => runExporterPitch(buyer)} style={{ backgroundColor: '#28a745', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold', transition: 'background-color 0.2s' }} onMouseOver={(e) => e.target.style.backgroundColor = '#218838'} onMouseOut={(e) => e.target.style.backgroundColor = '#28a745'}>Review Buyer & Pitch</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Exporter: Buyer Credit Risk Tab */}
+      {activeTab === 'credit-risk' && (
+        <div style={{ border: '2px solid #dc3545', borderRadius: '10px', padding: '30px', backgroundColor: '#f8f9fa' }}>
+          <h2 style={{ color: '#dc3545', marginBottom: '20px' }}>Buyer Risk & Compliance Gatekeeper</h2>
+          <p style={{ color: '#6c757d' }}>Live calculation of credit exposure, port congestion, currency volatility, and geopolitical risks.</p>
+          
+          {loading ? (
+             <div style={{ padding: '30px', textAlign: 'center', color: '#dc3545', fontWeight: 'bold' }}>Risk Agent querying OpenWeather, AIS Port Congestion & FastForex APIS...</div>
+          ) : buyerRiskResult ? (
+            <div style={{
+              marginTop: '20px',
+              padding: '25px',
+              border: `2px solid ${buyerRiskResult.risk_level === 'HIGH' ? '#dc3545' : buyerRiskResult.risk_level === 'MEDIUM' ? '#ffc107' : '#28a745'}`,
+              borderRadius: '10px',
+              backgroundColor: '#ffffff'
+            }}>
+              <h3 style={{ 
+                color: buyerRiskResult.risk_level === 'HIGH' ? '#dc3545' : buyerRiskResult.risk_level === 'MEDIUM' ? '#fd7e14' : '#28a745',
+                margin: '0 0 15px 0'
+              }}>
+                Dynamic Risk Assessment: {buyerRiskResult.companyName}
+              </h3>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+                <div style={{ backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '8px' }}>
+                  <h4 style={{ margin: '0 0 10px 0', color: '#495057' }}>Overall Transaction Risk</h4>
+                  <div style={{ fontSize: '36px', fontWeight: 'bold', color: buyerRiskResult.risk_level === 'HIGH' ? '#dc3545' : buyerRiskResult.risk_level === 'MEDIUM' ? '#fd7e14' : '#28a745' }}>
+                    {buyerRiskResult.risk_level} 
+                    <span style={{ fontSize: '18px', color: '#6c757d', marginLeft: '10px' }}>({buyerRiskResult.risk_score} / 10)</span>
+                  </div>
+                  <p style={{ margin: '10px 0 0 0', fontWeight: 'bold', color: buyerRiskResult.proceed_recommended ? '#28a745' : '#dc3545' }}>
+                    {buyerRiskResult.proceed_recommended ? "CLEAR FOR EXPORT" : "🚫 TRADE BLOCKED - ESCROW MANDATED"}
+                  </p>
+                </div>
+                
+                <div style={{ backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '8px' }}>
+                  <h4 style={{ margin: '0 0 10px 0', color: '#495057' }}>5-Pillar Live Calculation</h4>
+                  <div style={{ fontSize: '14px', lineHeight: '1.8' }}>
+                    <div><strong>Financial & Currency Volatility:</strong> {buyerRiskResult.components.financial}/10</div>
+                    <div><strong>Destination Port (Congestion/Weather):</strong> {buyerRiskResult.components.logistics}/10</div>
+                    <div><strong>Compliance Target Tariffs:</strong> {buyerRiskResult.components.compliance}/10</div>
+                    <div><strong>Market Baseline Check:</strong> {buyerRiskResult.components.market}/10</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div style={{ backgroundColor: '#fff3cd', borderLeft: '4px solid #ffc107', padding: '15px', borderRadius: '4px' }}>
+                <h4 style={{ margin: '0 0 10px 0', color: '#856404' }}>Autonomous AI Recommendations</h4>
+                <ul style={{ margin: 0, paddingLeft: '20px', color: '#856404' }}>
+                  {buyerRiskResult.recommendations.map((rec, i) => (
+                    <li key={i} style={{ marginBottom: '5px' }}>{rec}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ) : (
+            <div style={{ marginTop: '20px' }}>
+               <h4 style={{ color: '#495057', marginBottom: '15px' }}>Select Lead to Execute Real-time APIs</h4>
+               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
+                 {(exporterBuyerLeads || []).map((b, i) => (
+                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '15px', backgroundColor: 'white', borderRadius: '5px', border: '1px solid #ced4da' }}>
+                      <div><strong>{b.company_name}</strong> - {b.country}</div>
+                      <button onClick={() => evaluateBuyerRisk(b)} style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '5px 15px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Run 5-Pillar Scan</button>
+                   </div>
+                 ))}
+                 {(!exporterBuyerLeads || exporterBuyerLeads.length === 0) && (
+                   <div style={{ color: '#6c757d' }}>No leads found. Return to Matchmaker.</div>
+                 )}
+               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Exporter: Outbound Quotes Tab */}
+      {activeTab === 'outbound-quote' && (
+        <div style={{ border: '2px solid #fd7e14', borderRadius: '10px', padding: '30px', backgroundColor: '#f8f9fa' }}>
+          <h2 style={{ color: '#fd7e14', marginBottom: '20px' }}>Outbound Logistics & Quoting</h2>
+          <p style={{ color: '#6c757d' }}>Generate a CIF (Cost, Insurance & Freight) quote dynamically for the buyer.</p>
+          
+          {loading ? (
+             <div style={{ padding: '30px', textAlign: 'center', color: '#fd7e14', fontWeight: 'bold' }}>Intelligence Engine computing CIF Quote via live APIs...</div>
+          ) : negotiationResult && negotiationResult.proposal ? (
+            <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', border: '1px solid #fd7e14', marginTop: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                 <h4 style={{ color: '#fd7e14', margin: 0 }}>Autonomous Proposal: CIF {negotiationResult.buyer?.country || 'Destination'}</h4>
+                 <div style={{ backgroundColor: '#fff3cd', padding: '5px 10px', borderRadius: '4px', fontWeight: 'bold', color: '#856404', fontSize: '12px' }}>
+                   Risk Gatekeeper: {negotiationResult.risk_status || 'Analyzed'}
+                 </div>
+              </div>
+              
+              <div style={{ backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '5px', marginBottom: '15px', borderLeft: '4px solid #fd7e14' }}>
+                 <strong>Product:</strong> {negotiationResult.proposal.quantity} {negotiationResult.proposal.unit} of {negotiationResult.proposal.product_name} <br/>
+                 <strong>FOB Base Price (yfinance):</strong> {negotiationResult.proposal.base_price_fob} {negotiationResult.proposal.currency} <br/>
+                 <strong>Est. Freight & Insurance:</strong> {negotiationResult.proposal.freight_insurance} {negotiationResult.proposal.currency} <br/>
+                 <strong style={{ fontSize: '18px', color: '#dc3545', display: 'block', marginTop: '10px' }}>
+                    Total CIF Offer: {negotiationResult.proposal.total_cif_quote} {negotiationResult.proposal.currency}
+                 </strong>
+              </div>
+              
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button 
+                  disabled={riskResult?.overall_risk === 'HIGH'}
+                  onClick={() => {
+                     if (riskResult?.overall_risk === 'HIGH') {
+                       alert("BLOCKED: Cannot execute trade. Compliance Risk is too high.");
+                       return;
+                     }
+                     alert("Quote digitally signed and dispatched to Buyer! Initializing Document execution...");
+                     runDocumentAgent(negotiationResult.buyer);
+                  }} 
+                  style={{ 
+                    flex: 1, 
+                    backgroundColor: riskResult?.overall_risk === 'HIGH' ? '#dc3545' : '#fd7e14', 
+                    color: 'white', 
+                    border: 'none', 
+                    padding: '12px 24px', 
+                    borderRadius: '5px', 
+                    cursor: riskResult?.overall_risk === 'HIGH' ? 'not-allowed' : 'pointer', 
+                    fontWeight: 'bold' 
+                  }}>
+                  {riskResult?.overall_risk === 'HIGH' ? 'Blocked by Compliance Gatekeeper' : 'Send Verified Pitch ➜'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', border: '1px solid #dee2e6', marginTop: '20px', textAlign: 'center' }}>
+              <h4 style={{ color: '#fd7e14' }}>Calculate Freight to Buyer</h4>
+              <button disabled style={{ backgroundColor: '#e9ecef', color: '#6c757d', border: 'none', padding: '12px 24px', borderRadius: '5px', cursor: 'not-allowed', fontWeight: 'bold' }}>No Active Pitch Input</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Exporter: Document Generation Tab */}
+      {activeTab === 'doc-generation' && (
+        <div style={{ border: '2px solid #6f42c1', borderRadius: '10px', padding: '30px', backgroundColor: '#f8f9fa' }}>
+          <h2 style={{ color: '#6f42c1', marginBottom: '20px' }}>Export Document Generation</h2>
+          <p style={{ color: '#6c757d' }}>Auto-generate Commercial Invoices, Packing Lists, and Certificates of Origin.</p>
+          <div style={{ backgroundColor: '#e2d9f3', padding: '20px', borderRadius: '8px', border: '1px solid #c9bdeb', marginTop: '20px', textAlign: 'center' }}>
+            <h4 style={{ color: '#4a2380', margin: '0 0 15px 0' }}>Ready to Generate Export Package</h4>
+            <button 
+                disabled={riskResult?.overall_risk === 'HIGH' || buyerRiskResult?.overall_risk === 'HIGH'}
+                onClick={() => runDocumentAgent(negotiationResult?.buyer || {})} 
+                style={{ backgroundColor: (riskResult?.overall_risk === 'HIGH' || buyerRiskResult?.overall_risk === 'HIGH') ? '#dc3545' : '#6f42c1', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '5px', cursor: (riskResult?.overall_risk === 'HIGH' || buyerRiskResult?.overall_risk === 'HIGH') ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>
+                {(riskResult?.overall_risk === 'HIGH' || buyerRiskResult?.overall_risk === 'HIGH') ? 'Generation Blocked Due to Sanctions' : 'Generate & e-Sign Documents'}
+            </button>
+          </div>
         </div>
       )}
 
