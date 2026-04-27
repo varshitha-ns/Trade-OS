@@ -244,7 +244,7 @@ class RiskAgent:
         route_risk = self._get_route_duration_risk(supplier_coords, buyer_coords)
         
         # 2. Weather at destination port has the highest impact on unloading delays
-        port = trade.get('buyer_port', 'Mumbai')
+        port = trade.get('buyer_port') or trade.get('buyer_country') or trade.get('country') or 'Unknown'
         weather_risk = self._get_weather_risk(port)
         
         # 3. Port Congestion Tracking

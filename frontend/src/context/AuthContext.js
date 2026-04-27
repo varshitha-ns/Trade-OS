@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { authAPI } from '../services/api';
+import { authAPI, userAPI } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -19,12 +19,13 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('access_token');
     if (token) {
       // Verify token and get user profile
-      authAPI.getProfile()
+      userAPI.getProfile()
         .then(response => {
           setUser(response.data);
         })
         .catch(() => {
           localStorage.removeItem('access_token');
+          setUser(null);
         })
         .finally(() => {
           setLoading(false);
@@ -40,7 +41,7 @@ export const AuthProvider = ({ children }) => {
       const { access_token } = response.data;
       localStorage.setItem('access_token', access_token);
       
-      const profileResponse = await authAPI.getProfile();
+      const profileResponse = await userAPI.getProfile();
       setUser(profileResponse.data);
       
       return { success: true };
@@ -69,11 +70,23 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const refreshUser = async () => {
+    try {
+      const response = await userAPI.getProfile();
+      setUser(response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Failed to refresh user", error);
+      return null;
+    }
+  };
+
   const value = {
     user,
     login,
     register,
     logout,
+    refreshUser,
     loading
   };
 

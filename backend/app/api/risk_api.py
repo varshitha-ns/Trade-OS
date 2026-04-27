@@ -1,8 +1,10 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
+import asyncio
 from app.agents.risk_agent import risk_agent
 from app.database import mongodb
+from app.core.events import event_bus
 
 router = APIRouter()
 
@@ -15,7 +17,7 @@ class TradeRequest(BaseModel):
     payment_terms: Optional[str] = "Advance"
     delivery_days: Optional[int] = 30
     supplier_port: Optional[str] = "Shanghai"
-    buyer_port: Optional[str] = "Mumbai"
+    buyer_port: Optional[str] = None
 
 @router.post("/assess-risk")
 async def assess_risk(request: TradeRequest):
@@ -31,7 +33,6 @@ async def assess_risk(request: TradeRequest):
     try:
         db = mongodb.database
         if db is not None:
-            # Assumes a collection named 'suppliers_master' or 'suppliers'
             supplier_data = await db["suppliers"].find_one({"supplier_id": supplier_id})
     except Exception as e:
         print(f"Error fetching from MongoDB: {e}")
@@ -52,11 +53,25 @@ async def assess_risk(request: TradeRequest):
     # 2. Run Risk Agent
     try:
         report = risk_agent.analyze_trade_risk(trade_data, supplier_data)
-        return {
+        response = {
             "status": "success",
             "trade_id": "TRD-SIMULATED",
             "supplier_id": supplier_id,
             "risk_report": report
         }
+        
+        # 3. 🔥 AUTONOMOUS PIPELINE: Fire RISK_ASSESSED event (non-blocking)
+        # This triggers the downstream pipeline (DocumentAgent readiness, EscrowAgent, etc.)
+        # without blocking or changing the API response in any way.
+        asyncio.create_task(event_bus.emit("RISK_ASSESSED", {
+            "trade_id": "TRD-SIMULATED",
+            "supplier_id": supplier_id,
+            "overall_risk": report.get("risk_level", "UNKNOWN"),
+            "overall_score": report.get("risk_score", 0),
+            "proceed_recommended": report.get("proceed_recommended", False)
+        }))
+        
+        return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+

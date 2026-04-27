@@ -1,10 +1,12 @@
 import os
+import asyncio
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Dict, Any, List
 from app.agents.document_agent import document_agent
 from app.models.document_agent import TradePackage, TradeDocument
+from app.core.events import event_bus
 
 router = APIRouter()
 
@@ -28,9 +30,20 @@ async def process_document_workflow(request: DocumentAgentRequest):
     try:
         trade_data = request.dict()
         package = await document_agent.execute_autonomous_workflow(trade_data)
+        
+        # 🔥 AUTONOMOUS PIPELINE: Fire DOCUMENTS_READY event (non-blocking)
+        # Triggers EscrowAgent to lock funds for Milestone 1 (20%)
+        asyncio.create_task(event_bus.emit("DOCUMENTS_READY", {
+            "trade_id": request.trade_id,
+            "supplier_id": request.supplier_id,
+            "document_count": len(package.documents) if hasattr(package, 'documents') else 0,
+            "contract_address": "0x0000000000000000000000000000000000000000"
+        }))
+        
         return package
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/download/{document_id}")
 async def download_document(document_id: str):

@@ -38,6 +38,16 @@ api.interceptors.response.use(
 export const authAPI = {
   register: (userData) => api.post('/api/auth/register', userData),
   login: (userData) => api.post('/api/auth/login', userData),
+  uploadKYC: (userId, documentType, file) => {
+    const formData = new FormData();
+    formData.append('user_id', userId);
+    formData.append('document_type', documentType);
+    formData.append('file', file);
+    return api.post('/api/auth/upload-kyc', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  getStatus: (userId) => api.get(`/api/auth/status?user_id=${userId}`),
 };
 
 export const userAPI = {

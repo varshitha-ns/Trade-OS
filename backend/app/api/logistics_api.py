@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
+import asyncio
 from app.agents.logistics_agent import LogisticsAgent
+from app.core.events import event_bus
 
 router = APIRouter()
 logistics_agent_instance = LogisticsAgent()
@@ -46,6 +48,17 @@ async def book_logistics_route(request: BookShipmentRequest):
     """
     try:
         booking = logistics_agent_instance.book_shipment(request.route_option_id, request.trade_id)
+        
+        # 🔥 AUTONOMOUS PIPELINE: Fire SHIPMENT_BOOKED event (non-blocking)
+        # Triggers EscrowAgent to release 50% funds (Dispatch Milestone)
+        asyncio.create_task(event_bus.emit("SHIPMENT_BOOKED", {
+            "trade_id": request.trade_id,
+            "tracking_number": booking.get("tracking_number", ""),
+            "route_option_id": request.route_option_id,
+            "origin": "Origin Port",
+            "contract_address": "0x0000000000000000000000000000000000000000"
+        }))
+        
         return {
             "status": "success",
             "booking": booking

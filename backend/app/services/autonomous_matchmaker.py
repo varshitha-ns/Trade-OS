@@ -178,14 +178,23 @@ class AutonomousMatchmakerService:
         if product_name:
             product_eligible = []
             for supplier in suppliers:
-                supplier_commodity = str(supplier.get("commodity_name", "")).strip().lower()
-                supplier_products = [str(p).strip().lower() for p in supplier.get("products", [])]
+                # Robust fuzzy matching: check if product_name (e.g. 'copper') is in commodity name (e.g. 'copper cathodes')
+                # Also check word-level match to handle 'copper' vs 'coppers'
+                commodity_words = set(supplier_commodity.split())
+                product_words = set(product_name.split())
                 
-                # Verify if 'turmeric' matches 'turmeric powder' or similar
-                if (product_name in supplier_commodity) or any(product_name in p for p in supplier_products):
+                is_match = False
+                if product_name in supplier_commodity:
+                    is_match = True
+                elif any(word in commodity_words for word in product_words):
+                    is_match = True
+                elif any(product_name in p for p in supplier_products):
+                    is_match = True
+                
+                if is_match:
                     product_eligible.append(supplier)
             
-            # If we found exact product matches, heavily prune the generic HS-code bucket
+            # If we found matches, use them. 
             if product_eligible:
                 suppliers = product_eligible
         
@@ -339,6 +348,7 @@ class AutonomousMatchmakerService:
                     "risk_score": round(dynamic_risk, 3),
                     "aadhaar_verified": False,
                     "kyc_verified": bool(supplier.get("certification_iso") == "Yes"),
+                    "years_in_business": supplier.get("years_in_business", 0),
                     "explanation": self._build_explanation(supplier, dynamic_risk, components),
                     "score_breakdown": components,
                 }

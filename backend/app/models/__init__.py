@@ -16,9 +16,9 @@ class UserType(str, Enum):
     BOTH = "both"
 
 class VerificationStatus(str, Enum):
-    PENDING = "pending"
-    VERIFIED = "verified"
-    REJECTED = "rejected"
+    PENDING = "PENDING_VERIFICATION"
+    VERIFIED = "VERIFIED"
+    REJECTED = "REJECTED"
 
 class CompanySize(str, Enum):
     MICRO = "micro"  # 1-9 employees
@@ -31,7 +31,8 @@ class UserCreate(BaseModel):
     company_name: str
     user_type: UserType
     country: str
-    business_registration_number: str
+    business_registration_number: str # Maps to GSTIN/Business ID
+    contact_number: str
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -43,6 +44,8 @@ class User(BaseModel):
     company_name: str
     user_type: UserType
     country: str
+    business_registration_number: str
+    contact_number: str
     verification_status: VerificationStatus
     company_size: Optional[CompanySize] = None
     business_description: Optional[str] = None

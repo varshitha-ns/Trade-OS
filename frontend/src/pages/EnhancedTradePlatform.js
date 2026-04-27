@@ -1,51 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import OCRDocumentUpload from '../components/OCRDocumentUpload';
 import AadhaarVerification from '../components/AadhaarVerification';
 import { documentValidationService } from '../services/documentValidationService';
 import { digitalVerificationService } from '../services/digitalVerificationService';
+import { useAuth } from '../context/AuthContext';
 import '../styles/ocrUpload.css';
 import '../styles/documentValidation.css';
 
 const EnhancedTradePlatform = () => {
-  const [hasEntered, setHasEntered] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
-  const [activeTab, setActiveTab] = useState('registration');
-  const [registrationData, setRegistrationData] = useState({
-    companyInfo: {
-      company_name: '',
-      business_type: 'exporter',
-      registration_number: '',
-      tax_id: '',
-      email: '',
-      phone: '',
-      website: '',
-      address: {
-        street: '',
-        city: '',
-        state: '',
-        country: '',
-        postal_code: ''
-      },
-      business_description: '',
-      years_in_business: 0,
-      company_size: 'small'
-    },
-    tradeProfile: {
-      primary_products: [],
-      product_categories: [],
-      hs_codes: [],
-      trade_regions: [],
-      preferred_payment_terms: [],
-      shipping_methods: []
-    },
-    userInfo: {
-      name: '',
-      position: '',
-      contact_email: ''
-    }
-  });
+  const { user, logout } = useAuth();
+  const [activeTab, setActiveTab] = useState(null);
   
+  // Set initial tab based on user role once user is loaded
+  useEffect(() => {
+    if (user && !activeTab) {
+      setActiveTab(user.user_type === 'exporter' ? 'catalog' : 'parser');
+    }
+  }, [user, activeTab]);
+
+  const resetPlatform = () => {
+    if (window.confirm("Are you sure you want to reset the current trade session? All temporary results will be cleared.")) {
+      setParsedItem(null);
+      setMatchmakerResults(null);
+      setNegotiationResult(null);
+      setDocumentAgentResult(null);
+      setRiskResult(null);
+      setBuyerRiskResult(null);
+      setLogisticsRoutes(null);
+      setLogisticsBooking(null);
+      setLogisticsTracking(null);
+      setSmartCatalogItem(null);
+      setExporterBuyerLeads(null);
+      setActiveTab(user.user_type === 'exporter' ? 'catalog' : 'parser');
+    }
+  };
+
+  // Trade Parser logic...
   const [tradeDescription, setTradeDescription] = useState('');
   const [catalogDescription, setCatalogDescription] = useState('');
   const [smartCatalogItem, setSmartCatalogItem] = useState(null);
@@ -57,21 +47,14 @@ const EnhancedTradePlatform = () => {
   const [riskResult, setRiskResult] = useState(null);
   const [buyerRiskResult, setBuyerRiskResult] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [documentVerification, setDocumentVerification] = useState({
-    business_registration: null,
-    tax_certificate: null,
-    import_license: null,
-    export_license: null,
-    quality_certificates: null,
-    bank_reference: null,
-    identity_proof: null
-  });
-  const [verificationStatus, setVerificationStatus] = useState('pending');
-
-  // Logistics Agent State
   const [logisticsRoutes, setLogisticsRoutes] = useState(null);
   const [logisticsBooking, setLogisticsBooking] = useState(null);
   const [logisticsTracking, setLogisticsTracking] = useState(null);
+  const [qcReport, setQcReport] = useState(null);
+  const [escrowLedger, setEscrowLedger] = useState(null);
+  const [feasibilityReport, setFeasibilityReport] = useState(null);
+  const [landedCost, setLandedCost] = useState(null);
+  const [coImportGroups, setCoImportGroups] = useState([]);
 
   // LangChain Orchestrator State
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -80,197 +63,6 @@ const EnhancedTradePlatform = () => {
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
-
-  // Get required documents based on business type
-  const getRequiredDocuments = (businessType) => {
-    const documents = {
-      importer: [
-        { key: 'business_registration', title: 'Business Registration Certificate', type: 'BUSINESS_REGISTRATION' },
-        { key: 'tax_certificate', title: 'Tax Registration Certificate', type: 'TAX_CERTIFICATE' },
-        { key: 'import_license', title: 'Import License', type: 'IMPORT_LICENSE' },
-        { key: 'bank_reference', title: 'Bank Reference Letter', type: 'BANK_REFERENCE' },
-        { key: 'identity_proof', title: 'Identity Proof (Aadhaar/PAN/Passport)', type: 'AADHAAR_CARD' }
-      ],
-      exporter: [
-        { key: 'business_registration', title: 'Business Registration Certificate', type: 'BUSINESS_REGISTRATION' },
-        { key: 'tax_certificate', title: 'Tax Registration Certificate', type: 'TAX_CERTIFICATE' },
-        { key: 'export_license', title: 'Export License', type: 'EXPORT_LICENSE' },
-        { key: 'quality_certificates', title: 'Quality Certificates', type: 'QUALITY_CERTIFICATE' },
-        { key: 'bank_reference', title: 'Bank Reference Letter', type: 'BANK_REFERENCE' },
-        { key: 'identity_proof', title: 'Identity Proof (Aadhaar/PAN/Passport)', type: 'AADHAAR_CARD' }
-      ],
-      both: [
-        { key: 'business_registration', title: 'Business Registration Certificate', type: 'BUSINESS_REGISTRATION' },
-        { key: 'tax_certificate', title: 'Tax Registration Certificate', type: 'TAX_CERTIFICATE' },
-        { key: 'import_license', title: 'Import License', type: 'IMPORT_LICENSE' },
-        { key: 'export_license', title: 'Export License', type: 'EXPORT_LICENSE' },
-        { key: 'quality_certificates', title: 'Quality Certificates', type: 'QUALITY_CERTIFICATE' },
-        { key: 'bank_reference', title: 'Bank Reference Letter', type: 'BANK_REFERENCE' },
-        { key: 'identity_proof', title: 'Identity Proof (Aadhaar/PAN/Passport)', type: 'AADHAAR_CARD' }
-      ]
-    };
-    return documents[businessType] || [];
-  };
-
-  // Handle document upload and verification
-  const handleDocumentUpload = async (documentKey, ocrResult, validationResults, autoFillData = null) => {
-    setDocumentVerification(prev => ({
-      ...prev,
-      [documentKey]: {
-        ocrResult,
-        validationResults,
-        uploadedAt: new Date().toISOString(),
-        status: validationResults?.isValid ? 'verified' : 'pending_review'
-      }
-    }));
-
-    // Auto-fill form fields from OCR results
-    if (!autoFillData && ocrResult && ocrResult.extractedFields) {
-      autoFillData = {};
-      Object.keys(ocrResult.extractedFields).forEach(field => {
-        const fieldData = ocrResult.extractedFields[field];
-        if (fieldData && fieldData.confidence > 85) {
-          autoFillData[field] = fieldData.value;
-        }
-      });
-    }
-
-    if (autoFillData) {
-
-      // Update registration data with extracted information
-      if (autoFillData.name && !registrationData.companyInfo.company_name) {
-        setRegistrationData(prev => ({
-          ...prev,
-          companyInfo: {
-            ...prev.companyInfo,
-            company_name: autoFillData.name
-          }
-        }));
-      }
-
-      if (autoFillData.panNumber && !registrationData.companyInfo.tax_id) {
-        setRegistrationData(prev => ({
-          ...prev,
-          companyInfo: {
-            ...prev.companyInfo,
-            tax_id: autoFillData.panNumber
-          }
-        }));
-      }
-    }
-
-    // Perform digital verification for Aadhaar cards
-    if (documentKey === 'identity_proof' && ocrResult && ocrResult.extractedFields) {
-      await performDigitalVerification(documentKey, ocrResult);
-    }
-  };
-
-  // Digital verification using government APIs
-  const performDigitalVerification = async (documentKey, ocrResult) => {
-    try {
-      const extractedFields = ocrResult.extractedFields;
-      let digitalVerificationResult = null;
-
-      // Aadhaar digital verification
-      if (extractedFields.aadhaarNumber && extractedFields.name) {
-        console.log('Performing Aadhaar digital verification...');
-        digitalVerificationResult = await digitalVerificationService.verifyAadhaar(
-          extractedFields.aadhaarNumber.value,
-          extractedFields.name.value
-        );
-      }
-
-      // PAN digital verification
-      if (extractedFields.panNumber && extractedFields.name) {
-        console.log('Performing PAN digital verification...');
-        digitalVerificationResult = await digitalVerificationService.verifyPAN(
-          extractedFields.panNumber.value,
-          extractedFields.name.value
-        );
-      }
-
-      // Update document verification with digital verification result
-      if (digitalVerificationResult) {
-        setDocumentVerification(prev => ({
-          ...prev,
-          [documentKey]: {
-            ...prev[documentKey],
-            digitalVerification: digitalVerificationResult,
-            status: digitalVerificationResult.isValid ? 'digitally_verified' : prev[documentKey].status,
-            verifiedAt: new Date().toISOString()
-          }
-        }));
-
-        // Show verification result to user
-        if (digitalVerificationResult.isValid) {
-          alert(`${documentKey.replace('_', ' ').toUpperCase()} digitally verified with government database!\n\n${digitalVerificationResult.message}`);
-        } else {
-          alert(`${documentKey.replace('_', ' ').toUpperCase()} digital verification failed:\n\n${digitalVerificationResult.error || digitalVerificationResult.message}`);
-        }
-      }
-
-    } catch (error) {
-      console.error('Digital verification error:', error);
-      alert(`❌ Digital verification failed: ${error.message}`);
-    }
-  };
-
-  // Check overall verification status
-  const checkVerificationStatus = () => {
-    const requiredDocs = getRequiredDocuments(registrationData.companyInfo.business_type);
-    const uploadedDocs = Object.keys(documentVerification).filter(key => 
-      documentVerification[key] && (
-        documentVerification[key].status === 'verified' || 
-        documentVerification[key].status === 'digitally_verified'
-      )
-    );
-    
-    if (uploadedDocs.length === requiredDocs.length) {
-      setVerificationStatus('verified');
-    } else if (uploadedDocs.length > 0) {
-      setVerificationStatus('partial');
-    } else {
-      setVerificationStatus('pending');
-    }
-  };
-
-  // Submit registration with document verification
-  const submitRegistration = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('http://localhost:8000/api/registration/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...registrationData,
-          documents: Object.entries(documentVerification).map(([key, data]) => ({
-            document_type: key,
-            document_number: data?.ocrResult?.extractedFields?.documentNumber?.value || '',
-            issued_by: data?.ocrResult?.extractedFields?.issuedBy?.value || 'Government',
-            issue_date: data?.ocrResult?.extractedFields?.issueDate?.value || new Date().toISOString().split('T')[0],
-            verification_status: data?.status || 'pending',
-            verification_date: data?.uploadedAt || new Date().toISOString(),
-            document_url: data?.ocrResult?.imageUrl || ''
-          }))
-        })
-      });
-
-      const data = await response.json();
-      
-      if (response.ok) {
-        alert('Registration successful! ID: ' + data.registration_id);
-        console.log('Registration result:', data);
-      } else {
-        alert('Registration failed: ' + (data.detail || 'Unknown error'));
-      }
-    } catch (error) {
-      alert('Error: ' + error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Parse trade description
   const parseTradeItem = async () => {
@@ -292,6 +84,9 @@ const EnhancedTradePlatform = () => {
       
       if (response.ok) {
         setParsedItem(data.parsed_item);
+        // Trigger Intelligence Agents
+        fetchFeasibility(data.parsed_item.product_name, data.parsed_item.hs_code_suggestion);
+        fetchCoImportGroups(data.parsed_item.product_name);
         setActiveTab('matchmaker');
       } else {
         const errorMessage = data.detail || (typeof data === 'object' ? JSON.stringify(data) : 'Unknown error');
@@ -302,6 +97,48 @@ const EnhancedTradePlatform = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Intelligence & MOQ Functions
+  const fetchFeasibility = async (product, hs) => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/intelligence/feasibility?product=${product}&hs_code=${hs}`);
+      const data = await res.json();
+      setFeasibilityReport(data);
+    } catch (e) { console.error(e); }
+  };
+
+  const fetchLandedCost = async (price, hs, origin) => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/intelligence/landed-cost?price=${price}&hs_code=${hs}&origin=${origin}`);
+      const data = await res.json();
+      setLandedCost(data);
+    } catch (e) { console.error(e); }
+  };
+
+  const fetchCoImportGroups = async (commodity) => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/co-import/groups?commodity=${commodity}`);
+      const data = await res.json();
+      setCoImportGroups(data);
+    } catch (e) { console.error(e); }
+  };
+
+  const joinGroup = async (groupId) => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/co-import/join/${groupId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company_name: user?.company_name || "SME_USER", quantity: 1000 })
+      });
+      const data = await res.json();
+      if (data.message) {
+        alert(data.message);
+      } else {
+        alert(`Successfully joined group ${groupId}`);
+      }
+      fetchCoImportGroups(parsedItem.product_name);
+    } catch (e) { console.error(e); }
   };
 
   // Exporter: Generate Smart Catalog
@@ -334,7 +171,7 @@ const EnhancedTradePlatform = () => {
     setLoading(true);
     setActiveTab('buyer-discovery');
     try {
-      const response = await fetch('http://localhost:8000/api/matchmaker/find-buyers', {
+      const response = await fetch('http://localhost:8000/api/matchmaker_buyer/find-buyers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(smartCatalogItem)
@@ -430,13 +267,13 @@ const EnhancedTradePlatform = () => {
     setActiveTab('document-agent');
     
     // Create the Trade Context request payload dynamically based on role
-    const isExporter = registrationData?.companyInfo?.business_type === 'exporter';
+    const isExporter = user?.user_type === 'exporter';
     const tradeData = {
       trade_id: `TRD-${Math.floor(Math.random() * 100000)}`,
-      supplier_id: isExporter ? (registrationData?.companyInfo?.company_name || "Self Supplier") : (targetEntity?.supplier_id || "Unknown Supplier"),
-      buyer_id: isExporter ? (targetEntity?.buyer_id || targetEntity?.company_name || "Unknown Buyer") : `BUY-${registrationData.companyInfo.company_name?.substring(0,5).toUpperCase() || 'ANON'}`,
-      exporter_country: isExporter ? (registrationData?.companyInfo?.address?.country || "Export Country") : (targetEntity?.country || "Exporter Country"),
-      importer_country: isExporter ? (targetEntity?.country || "Import Country") : (registrationData.companyInfo.address.country || parsedItem?.destination_country || 'USA'),
+      supplier_id: isExporter ? (user?.company_name || "Self Supplier") : (targetEntity?.supplier_id || "Unknown Supplier"),
+      buyer_id: isExporter ? (targetEntity?.buyer_id || targetEntity?.company_name || "Unknown Buyer") : `BUY-${user?.company_name?.substring(0,5).toUpperCase() || 'ANON'}`,
+      exporter_country: isExporter ? (user?.country || "Export Country") : (targetEntity?.country || "Exporter Country"),
+      importer_country: isExporter ? (targetEntity?.country || "Import Country") : (user?.country || parsedItem?.destination_country || 'USA'),
       hs_code: parsedItem?.hs_code_suggestion || smartCatalogItem?.hs_code || targetEntity?.hs_code || '000000',
       product_category: parsedItem?.product_category || smartCatalogItem?.category || 'General',
       product_name: parsedItem?.product_name || smartCatalogItem?.product_name || targetEntity?.product_name || 'Commodity',
@@ -557,54 +394,71 @@ const EnhancedTradePlatform = () => {
     if (e.key === 'Enter') submitChat();
   };
 
-  // Handle registration form changes
-  const handleRegistrationChange = (section, field, value) => {
-    setRegistrationData(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: value
+  const runInspection = async () => {
+    if (!parsedItem) return;
+    setLoading(true);
+    try {
+      const response = await fetch('http://localhost:8000/api/qc/inspect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          product_name: parsedItem.product_name,
+          trade_id: documentAgentResult?.trade_id || "TRD-DEMO"
+        })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setQcReport(data.report);
       }
-    }));
+    } catch (e) {
+      console.error("Inspection Agent failed", e);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Check verification status whenever documents change
-  React.useEffect(() => {
-    checkVerificationStatus();
-  }, [documentVerification, registrationData.companyInfo.business_type]);
-
-  const requiredDocuments = getRequiredDocuments(registrationData.companyInfo.business_type);
+  const fetchEscrowLedger = async () => {
+    try {
+      const price = negotiationResult?.final_agreed_price || 0;
+      const t_id = documentAgentResult?.trade_id || "TRD-DEMO";
+      const response = await fetch(`http://localhost:8000/api/escrow/ledger/${t_id}?price=${price}`);
+      const data = await response.json();
+      if (response.ok) {
+        setEscrowLedger(data);
+      }
+    } catch (e) {
+      console.error("Escrow API failed", e);
+    }
+  };
 
   // Dynamic port states for live production usage
   const [originPort, setOriginPort] = useState("");
   const [destinationPort, setDestinationPort] = useState("");
 
   // Auto-fill ports dynamically when Trade Context is acquired
-  React.useEffect(() => {
-    const isExporter = registrationData?.companyInfo?.business_type === 'exporter';
-    
-    if (isExporter) {
-      // Exporter Flow: Origin is me, Destination is the Buyer Lead
-      if (registrationData?.companyInfo?.address?.country && !originPort) {
-        setOriginPort(`${registrationData.companyInfo.address.country} Port`);
-      }
+  useEffect(() => {
+    if (user) {
+      const isExporter = user.user_type === 'exporter';
       
-      if (negotiationResult?.buyer?.country && !destinationPort) {
-        setDestinationPort(`${negotiationResult.buyer.country}`);
-      }
-    } else {
-      // Importer Flow: Origin is the Supplier, Destination is me
-      if (negotiationResult?.supplier?.country && !originPort) {
-        setOriginPort(`${negotiationResult.supplier.country} Port`);
-      }
-      
-      if (registrationData?.companyInfo?.address?.city && !destinationPort) {
-        setDestinationPort(`${registrationData.companyInfo.address.city} Port`);
-      } else if (parsedItem?.destination_country && !destinationPort) {
-        setDestinationPort(`${parsedItem.destination_country} Port`);
+      if (isExporter) {
+        if (user.country && !originPort) {
+          setOriginPort(`${user.country} Port`);
+        }
+        if (negotiationResult?.buyer?.country && !destinationPort) {
+          setDestinationPort(`${negotiationResult.buyer.country}`);
+        }
+      } else {
+        if (negotiationResult?.supplier?.country && !originPort) {
+          setOriginPort(`${negotiationResult.supplier.country} Port`);
+        }
+        if (user.country && !destinationPort) {
+          setDestinationPort(`${user.country} Port`);
+        } else if (parsedItem?.destination_country && !destinationPort) {
+          setDestinationPort(`${parsedItem.destination_country} Port`);
+        }
       }
     }
-  }, [negotiationResult, registrationData, parsedItem, originPort, destinationPort]);
+  }, [negotiationResult, user, parsedItem, originPort, destinationPort]);
 
   // Trigger real Risk Agent backend API
   const runRiskAgent = async () => {
@@ -614,7 +468,7 @@ const EnhancedTradePlatform = () => {
       const supplierName = negotiationResult?.supplier?.company_name || "Unknown";
       const supplierId = negotiationResult?.supplier?.supplier_id || "sup_001";
       const supplierCountry = originPort || parsedItem?.origin_country || negotiationResult?.supplier?.country || "China";
-      const buyerCountry = destinationPort || parsedItem?.destination_country || registrationData?.companyInfo?.address?.country || "India";
+      const buyerCountry = destinationPort || parsedItem?.destination_country || user?.country || "India";
       
       const tradePayload = {
         supplier_id: supplierId,
@@ -656,14 +510,14 @@ const EnhancedTradePlatform = () => {
     setBuyerRiskResult(null);
     try {
       const tradePayload = {
-        supplier_id: registrationData?.companyInfo?.company_name || "Exporter HQ",
-        country: originPort || registrationData?.companyInfo?.address?.country || "Export Country",
+        supplier_id: user?.company_name || "Exporter HQ",
+        country: originPort || user?.country || "Export Country",
         buyer_country: destinationPort || buyer.country || "Import Country",
         hs_code: smartCatalogItem?.hs_code || "000000",
         price: 1500.0, // Mock base line if no pitch generated
         payment_terms: "Advance", // Strict default to measure risk
         buyer_port: destinationPort || buyer.country || "Import Country",
-        supplier_port: originPort || registrationData?.companyInfo?.address?.country || "Export Port"
+        supplier_port: originPort || user?.country || "Export Port"
       };
 
       const res = await fetch('http://localhost:8000/api/risk/assess-risk', {
@@ -695,7 +549,7 @@ const EnhancedTradePlatform = () => {
     setLogisticsRoutes(null);
     try {
       const originLocation = parsedItem?.origin_country || negotiationResult?.supplier?.country || "Shanghai";
-      const destLocation = parsedItem?.destination_country || registrationData?.companyInfo?.address?.country || "Mumbai";
+      const destLocation = parsedItem?.destination_country || user?.country || "Mumbai";
       
       const tradePayload = {
         supplier_port: originLocation,
@@ -755,136 +609,6 @@ const EnhancedTradePlatform = () => {
   };
 
 
-  if (!hasEntered) {
-    return (
-      <div style={{
-        height: '100vh',
-        width: '100vw',
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        fontFamily: 'Inter, Arial, sans-serif',
-        color: 'white',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        zIndex: 9999
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          
-          <h1 style={{ 
-            fontSize: '56px', 
-            fontWeight: '900', 
-            letterSpacing: '-1px', 
-            marginBottom: '10px',
-            background: 'linear-gradient(to right, #60a5fa, #a78bfa)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent'
-          }}>
-            Welcome to Trade-OS Platform
-          </h1>
-          <p style={{ fontSize: '20px', color: '#94a3b8', maxWidth: '600px', margin: '0 auto 40px auto', lineHeight: '1.6' }}>
-            The autonomous, AI-driven infrastructure for modern global trade. Execute cross-border transactions safely with intelligent document verification, pareto-optimal logistics routing, and real-time risk assessment.
-          </p>
-          <button 
-            onClick={() => setHasEntered(true)}
-            style={{
-              padding: '16px 40px',
-              fontSize: '18px',
-              fontWeight: 'bold',
-              color: 'white',
-              background: 'linear-gradient(to right, #2563eb, #4f46e5)',
-              border: 'none',
-              borderRadius: '30px',
-              cursor: 'pointer',
-              boxShadow: '0 4px 15px rgba(37, 99, 235, 0.4)',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 6px 20px rgba(37, 99, 235, 0.6)';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 15px rgba(37, 99, 235, 0.4)';
-            }}
-          >
-            Enter Platform →
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (hasEntered && !isLoggedIn) {
-    return (
-      <div style={{
-        height: '100vh', width: '100vw', display: 'flex', flexDirection: 'column',
-        justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8f9fa',
-        fontFamily: 'Inter, Arial, sans-serif', position: 'fixed', top: 0, left: 0, zIndex: 9998
-      }}>
-        <div style={{
-          backgroundColor: 'white', padding: '40px', borderRadius: '12px',
-          boxShadow: '0 10px 25px rgba(0,0,0,0.05)', width: '100%', maxWidth: '400px'
-        }}>
-          <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-            
-            <h2 style={{ margin: 0, color: '#0f172a', fontSize: '24px' }}>Sign in to TradeOS</h2>
-            <p style={{ color: '#64748b', fontSize: '14px', marginTop: '5px' }}>Enter your details below to continue</p>
-          </div>
-          
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#334155', marginBottom: '8px' }}>Email Address</label>
-            <input 
-              type="email" 
-              placeholder="you@company.com"
-              value={loginForm.email}
-              onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
-              style={{ width: '100%', padding: '12px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box', outline: 'none' }}
-            />
-          </div>
-          
-          <div style={{ marginBottom: '25px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>Password</label>
-              <a href="#" onClick={(e) => e.preventDefault()} style={{ fontSize: '12px', color: '#2563eb', textDecoration: 'none' }}>Forgot password?</a>
-            </div>
-            <input 
-              type="password" 
-              placeholder="••••••••"
-              value={loginForm.password}
-              onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
-              style={{ width: '100%', padding: '12px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box', outline: 'none' }}
-              onKeyPress={(e) => e.key === 'Enter' && setIsLoggedIn(true)}
-            />
-          </div>
-          
-          <button 
-            onClick={() => setIsLoggedIn(true)}
-            style={{
-              width: '100%', padding: '14px', backgroundColor: '#2563eb', color: 'white',
-              border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer',
-              transition: 'background-color 0.2s'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-          >
-            Sign In
-          </button>
-          
-          <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '13px', color: '#64748b' }}>
-            Don't have an account? <a href="#" onClick={(e) => {
-              e.preventDefault();
-              setIsLoggedIn(true);
-            }} style={{ color: '#2563eb', fontWeight: 'bold', textDecoration: 'none' }}>Register your business</a>
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
       {/* Professional B2B Header with Role Switcher */}
@@ -908,28 +632,27 @@ const EnhancedTradePlatform = () => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#1e293b', padding: '5px' , borderRadius: '8px', border: '1px solid #334155' }}>
-            <span style={{ fontSize: '13px', color: '#cbd5e1', paddingLeft: '10px' }}>Viewing as:</span>
-            <button 
-              onClick={() => setRegistrationData(prev => ({...prev, companyInfo: {...prev.companyInfo, business_type: 'importer'}}))}
-              style={{
-                backgroundColor: registrationData.companyInfo.business_type === 'importer' ? '#3b82f6' : 'transparent',
-                color: registrationData.companyInfo.business_type === 'importer' ? 'white' : '#94a3b8',
-                border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', transition: 'all 0.2s'
-              }}
-            >
-              Importer
-            </button>
-            <button 
-              onClick={() => setRegistrationData(prev => ({...prev, companyInfo: {...prev.companyInfo, business_type: 'exporter'}}))}
-              style={{
-                backgroundColor: registrationData.companyInfo.business_type === 'exporter' ? '#10b981' : 'transparent',
-                color: registrationData.companyInfo.business_type === 'exporter' ? 'white' : '#94a3b8',
-                border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', transition: 'all 0.2s'
-              }}
-            >
-              Exporter
-            </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#1e293b', padding: '10px 20px' , borderRadius: '8px', border: '1px solid #334155' }}>
+            <span style={{ fontSize: '14px', color: '#cbd5e1' }}>Viewing as:</span>
+            <span style={{ 
+              backgroundColor: user?.user_type === 'exporter' ? '#10b981' : '#3b82f6', 
+              color: 'white', 
+              padding: '4px 12px', 
+              borderRadius: '20px', 
+              fontSize: '12px', 
+              fontWeight: 'bold',
+              textTransform: 'uppercase'
+            }}>
+              {user?.user_type}
+            </span>
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '5px' }}>
+            <div style={{ color: '#94a3b8', fontSize: '13px' }}>{user?.email}</div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+               <button onClick={resetPlatform} style={{ background: 'none', border: '1px solid #475569', color: '#cbd5e1', fontSize: '11px', padding: '2px 8px', borderRadius: '4px', cursor: 'pointer' }}>Reset Session</button>
+               <button onClick={logout} style={{ background: 'none', border: '1px solid #ef4444', color: '#ef4444', fontSize: '11px', padding: '2px 8px', borderRadius: '4px', cursor: 'pointer' }}>Logout</button>
+            </div>
           </div>
         </div>
       </div>
@@ -944,19 +667,18 @@ const EnhancedTradePlatform = () => {
         padding: '0 10px',
         overflowX: 'auto'
       }}>
-        {(registrationData.companyInfo.business_type === 'exporter' ? [
-          { id: 'registration', icon: '👤', label: 'Registration & Verification' },
+        {(user?.user_type === 'exporter' ? [
           { id: 'catalog', icon: '📦', label: 'Catalog & Inventory' },
           { id: 'buyer-discovery', icon: '🔍', label: 'Buyer Matchmaker' },
           { id: 'credit-risk', icon: '🛡️', label: 'Buyer Credit Risk' },
           { id: 'outbound-quote', icon: '✈️', label: 'Outbound Quotes' },
           { id: 'doc-generation', icon: '📄', label: 'Document Generation' }
         ] : [
-          { id: 'registration', icon: '👤', label: 'Registration & Verification' },
           { id: 'parser', icon: '📝', label: 'Trade Parser' },
           { id: 'matchmaker', icon: '🤝', label: 'Supplier Matchmaker' },
           { id: 'negotiator', icon: '💬', label: 'Market & Negotiation Agent' },
           { id: 'document-agent', icon: '📄', label: 'Document Verification' },
+          { id: 'quality-escrow', icon: '🛡️', label: 'Quality & Escrow Ledger' },
           { id: 'logistics-agent', icon: '🚢', label: 'Inbound Logistics' }
         ]).map(tab => (
           <button
@@ -982,214 +704,6 @@ const EnhancedTradePlatform = () => {
           </button>
         ))}
       </div>
-
-      {/* Enhanced Registration Tab with Document Verification */}
-      {activeTab === 'registration' && (
-        <div style={{
-          border: '2px solid #0d6efd',
-          borderRadius: '10px',
-          padding: '30px',
-          backgroundColor: '#f8f9fa'
-        }}>
-          <h2 style={{ color: '#0d6efd', marginBottom: '20px' }}>
-            Importer/Exporter Registration with Document Verification
-          </h2>
-          
-          {/* Verification Status Badge */}
-          <div style={{ marginBottom: '20px' }}>
-            <span style={{
-              padding: '8px 16px',
-              borderRadius: '20px',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              backgroundColor: verificationStatus === 'verified' ? '#28a745' : 
-                              verificationStatus === 'partial' ? '#ffc107' : '#6c757d',
-              color: 'white'
-            }}>
-              Verification Status: {verificationStatus.replace('_', ' ').toUpperCase()}
-            </span>
-            {verificationStatus === 'verified' && (
-              <span style={{
-                marginLeft: '10px',
-                padding: '4px 8px',
-                borderRadius: '12px',
-                fontSize: '12px',
-                backgroundColor: '#d1ecf1',
-                color: '#0c5460'
-              }}>
-                🔐 Government Verified
-              </span>
-            )}
-          </div>
-          
-          {/* Company Information */}
-          <div style={{ marginBottom: '30px' }}>
-            <h3>Company Information</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              <div>
-                <div style={{ marginBottom: '10px' }}>
-                  <label>Company Name:</label>
-                  <input
-                    type="text"
-                    value={registrationData.companyInfo.company_name}
-                    onChange={(e) => handleRegistrationChange('companyInfo', 'company_name', e.target.value)}
-                    style={{ width: '100%', padding: '8px', borderRadius: '5px', border: '1px solid #ced4da' }}
-                    placeholder="Enter company name"
-                  />
-                </div>
-                
-
-                
-                <div style={{ marginBottom: '10px' }}>
-                  <label>Email:</label>
-                  <input
-                    type="email"
-                    value={registrationData.companyInfo.email}
-                    onChange={(e) => handleRegistrationChange('companyInfo', 'email', e.target.value)}
-                    style={{ width: '100%', padding: '8px', borderRadius: '5px', border: '1px solid #ced4da' }}
-                    placeholder="company@example.com"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <div style={{ marginBottom: '10px' }}>
-                  <label>Country:</label>
-                  <input
-                    type="text"
-                    value={registrationData.companyInfo.address.country}
-                    onChange={(e) => handleRegistrationChange('companyInfo', 'address', {
-                      ...registrationData.companyInfo.address,
-                      country: e.target.value
-                    })}
-                    style={{ width: '100%', padding: '8px', borderRadius: '5px', border: '1px solid #ced4da' }}
-                    placeholder="Country"
-                  />
-                </div>
-                
-                <div style={{ marginBottom: '10px' }}>
-                  <label>Years in Business:</label>
-                  <input
-                    type="number"
-                    value={registrationData.companyInfo.years_in_business}
-                    onChange={(e) => handleRegistrationChange('companyInfo', 'years_in_business', parseInt(e.target.value))}
-                    style={{ width: '100%', padding: '8px', borderRadius: '5px', border: '1px solid #ced4da' }}
-                    placeholder="Years"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Document Verification Section */}
-          <div style={{ marginBottom: '30px' }}>
-            <h3>Required Documents for {registrationData.companyInfo.business_type.toUpperCase()}</h3>
-            <p style={{ color: '#6c757d', marginBottom: '20px' }}>
-              Upload all required documents. Each document will be automatically verified using OCR and AI validation.
-            </p>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              {requiredDocuments.map(doc => (
-                <div key={doc.key} style={{
-                  border: '1px solid #dee2e6',
-                  borderRadius: '8px',
-                  padding: '15px',
-                  backgroundColor: 'white'
-                }}>
-                  <h4 style={{ color: '#495057', marginBottom: '10px' }}>
-                    {doc.title}
-                  </h4>
-                  
-                  <OCRDocumentUpload
-                    title={doc.title}
-                    description={`Upload your ${doc.title.toLowerCase()}`}
-                    documentType={doc.type}
-                    required={true}
-                    onOCRComplete={(ocrResult, validationResults) => 
-                      handleDocumentUpload(doc.key, ocrResult, validationResults)
-                    }
-                  />
-                  
-                  {/* Use QR Code Verification for Aadhaar cards */}
-                  {doc.key === 'identity_proof' && doc.type === 'AADHAAR_CARD' && (
-                    <div style={{ marginTop: '15px', padding: '15px', border: '2px dashed #0d6efd', borderRadius: '8px', backgroundColor: '#f8f9fa' }}>
-                      <h5 style={{ color: '#0d6efd', marginBottom: '10px', fontSize: '14px' }}>
-                        🔄 QR Code Verification (Recommended)
-                      </h5>
-                      <p style={{ fontSize: '12px', color: '#6c757d', marginBottom: '10px' }}>
-                        For better accuracy, upload your Aadhaar card below for QR code scanning and digital signature verification.
-                      </p>
-                      <AadhaarVerification />
-                    </div>
-                  )}
-                  
-                  {/* Document Status */}
-                  {documentVerification[doc.key] && (
-                    <div style={{ marginTop: '10px' }}>
-                      <span style={{
-                        padding: '4px 8px',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                        fontWeight: 'bold',
-                        backgroundColor: 
-                          documentVerification[doc.key].status === 'digitally_verified' ? '#d1ecf1' :
-                          documentVerification[doc.key].status === 'verified' ? '#d4edda' : 
-                          '#fff3cd',
-                        color: 
-                          documentVerification[doc.key].status === 'digitally_verified' ? '#0c5460' :
-                          documentVerification[doc.key].status === 'verified' ? '#155724' : 
-                          '#856404'
-                      }}>
-                        {documentVerification[doc.key].status.replace('_', ' ').toUpperCase()}
-                      </span>
-                      
-                      {documentVerification[doc.key].validationResults && (
-                        <div style={{ marginTop: '5px', fontSize: '12px', color: '#6c757d' }}>
-                          Score: {documentVerification[doc.key].validationResults.score}% | 
-                          Risk: {documentVerification[doc.key].validationResults.riskLevel}
-                        </div>
-                      )}
-                      
-                      {documentVerification[doc.key].digitalVerification && (
-                        <div style={{ marginTop: '5px', fontSize: '12px', color: '#0c5460' }}>
-                          🔐 Digital: {documentVerification[doc.key].digitalVerification.confidence}% confidence
-                          {documentVerification[doc.key].digitalVerification.details && (
-                            <div style={{ fontSize: '11px', marginTop: '2px' }}>
-                              {documentVerification[doc.key].digitalVerification.details.maskedAadhaar && 
-                                `ID: ${documentVerification[doc.key].digitalVerification.details.maskedAadhaar}`}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <button
-            onClick={submitRegistration}
-            disabled={loading || verificationStatus !== 'verified'}
-            style={{
-              backgroundColor: (loading || verificationStatus !== 'verified') ? '#6c757d' : '#28a745',
-              color: 'white',
-              border: 'none',
-              padding: '12px 24px',
-              borderRadius: '5px',
-              cursor: (loading || verificationStatus !== 'verified') ? 'not-allowed' : 'pointer',
-              fontSize: '16px',
-              marginTop: '20px'
-            }}
-          >
-            {loading ? 'Processing...' : 
-             verificationStatus === 'verified' ? 'Complete Registration' :
-             verificationStatus === 'partial' ? 'Complete Document Verification' :
-             'Upload Required Documents'}
-          </button>
-        </div>
-      )}
 
       {/* Trade Parser Tab */}
       {activeTab === 'parser' && (
@@ -1291,8 +805,73 @@ const EnhancedTradePlatform = () => {
           backgroundColor: '#f8f9fa'
         }}>
           <h2 style={{ color: '#28a745', marginBottom: '20px' }}>
-            Matchmaker Agent Results
+            Supplier Matchmaker & Import Intelligence
           </h2>
+          
+          {/* Intelligence Section: Feasibility & Landed Cost */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
+             {feasibilityReport && (
+               <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', borderLeft: '6px solid #ffc107', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                  <h4 style={{ margin: '0 0 10px 0', color: '#856404' }}>📋 Import Feasibility Report</h4>
+                  <div style={{ fontSize: '14px' }}>
+                    <div style={{ marginBottom: '5px' }}><strong>Status:</strong> {feasibilityReport.import_status}</div>
+                    <div style={{ marginBottom: '5px' }}><strong>Compliance Checklist:</strong> {feasibilityReport.compliance_checklist.join(', ') || 'None (Standard GST)'}</div>
+                    <div style={{ marginBottom: '10px', color: '#dc3545', fontWeight: 'bold' }}>Recommendation: {feasibilityReport.recommendation}</div>
+                    <div style={{ backgroundColor: '#f8f9fa', padding: '10px', borderRadius: '4px', fontSize: '12px' }}>
+                      Risk Score: {feasibilityReport.risk_score} / 10
+                    </div>
+                  </div>
+               </div>
+             )}
+
+             {landedCost ? (
+               <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', borderLeft: '6px solid #0d6efd', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                  <h4 style={{ margin: '0 0 10px 0', color: '#0d6efd' }}>💰 True Landed Cost Simulator (INR)</h4>
+                  <div style={{ fontSize: '13px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                      <span>Expected Case:</span> <strong>₹{landedCost.simulations.expected_case.toLocaleString()}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', color: '#28a745' }}>
+                      <span>Best Case (Optimized):</span> <strong>₹{landedCost.simulations.best_case.toLocaleString()}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', color: '#dc3545' }}>
+                      <span>Worst Case (Delays/Fees):</span> <strong>₹{landedCost.simulations.worst_case.toLocaleString()}</strong>
+                    </div>
+                    <div style={{ fontSize: '11px', fontStyle: 'italic', color: '#6c757d' }}>
+                      Includes BCD ({landedCost.breakdown.basic_customs_duty}) + IGST ({landedCost.breakdown.igst}) + Est. Freight.
+                    </div>
+                  </div>
+               </div>
+             ) : (
+               <div style={{ backgroundColor: '#e9ecef', padding: '20px', borderRadius: '8px', textAlign: 'center', color: '#6c757d' }}>
+                  Select a supplier below to simulate Landed Cost.
+               </div>
+             )}
+          </div>
+
+          {/* MOQ Aggregator Section */}
+          {coImportGroups.length > 0 && (
+            <div style={{ marginBottom: '30px', backgroundColor: '#e7f3ff', padding: '20px', borderRadius: '10px', border: '1px solid #b8daff' }}>
+               <h4 style={{ color: '#004085', margin: '0 0 15px 0' }}>📦 MOQ Aggregator: Active Hub Groups found in India</h4>
+               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
+                  {coImportGroups.map(group => (
+                    <div key={group.group_id} style={{ backgroundColor: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #dee2e6' }}>
+                       <div style={{ fontWeight: 'bold', color: '#007bff' }}>{group.hub} Cluster: {group.commodity}</div>
+                       <div style={{ fontSize: '12px', margin: '10px 0' }}>
+                          Progress: {group.current_total} / {group.target_moq} kg <br/>
+                          Participants: {group.participants} SMEs <br/>
+                          Ends in: {group.days_left} days
+                       </div>
+                       <button 
+                         onClick={() => joinGroup(group.group_id)}
+                         style={{ width: '100%', backgroundColor: '#007bff', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+                         Join Group (Bypass MOQ)
+                       </button>
+                    </div>
+                  ))}
+               </div>
+            </div>
+          )}
           
           {!parsedItem ? (
             <div style={{ textAlign: 'center', padding: '40px' }}>
@@ -1423,37 +1002,68 @@ const EnhancedTradePlatform = () => {
                               </p>
                             </div>
                           </div>
-                          
+
+                          {/* Digital Trust & Compliance Audit */}
                           <div style={{ 
-                            backgroundColor: '#e9f7ef', 
-                            padding: '10px', 
-                            borderRadius: '5px', 
-                            fontSize: '14px', 
-                            fontStyle: 'italic',
-                            color: '#155724',
-                            borderLeft: '4px solid #28a745',
-                            marginBottom: '10px'
+                            backgroundColor: '#f1f3f5', 
+                            padding: '12px', 
+                            borderRadius: '8px', 
+                            fontSize: '12px', 
+                            border: '1px solid #dee2e6',
+                            marginBottom: '15px'
                           }}>
-                            {supplier.explanation}
+                            <h6 style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#495057' }}>🔒 Digital Trust & Compliance Audit</h6>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                              <div>
+                                <div style={{ color: supplier.kyc_verified ? '#28a745' : '#dc3545', fontWeight: 'bold', marginBottom: '3px' }}>
+                                  {supplier.kyc_verified ? '✓ ISO Certified' : '✗ Certification Missing'}
+                                </div>
+                                <div style={{ color: '#6c757d' }}>Verified Years in Business: {supplier.years_in_business || '15+'}</div>
+                              </div>
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontWeight: 'bold' }}>Risk Assessment:</div>
+                                <div style={{ 
+                                  display: 'inline-block', 
+                                  padding: '2px 8px', 
+                                  borderRadius: '12px', 
+                                  backgroundColor: supplier.risk_score < 3 ? '#d4edda' : '#fff3cd',
+                                  color: supplier.risk_score < 3 ? '#155724' : '#856404'
+                                }}>
+                                  {supplier.risk_score < 3 ? 'LOW RISK' : 'MODERATE RISK'}
+                                </div>
+                              </div>
+                            </div>
+                            <div style={{ marginTop: '8px', borderTop: '1px solid #ced4da', paddingTop: '8px', color: '#155724', fontWeight: 'bold' }}>
+                               AI Trust Signal: {supplier.explanation}
+                            </div>
                           </div>
                           
-                          <button
-                            onClick={() => runNegotiationAgent(supplier)}
-                            style={{
-                              backgroundColor: '#fd7e14',
-                              color: 'white',
-                              border: 'none',
-                              padding: '8px 16px',
-                              borderRadius: '5px',
-                              cursor: 'pointer',
-                              fontSize: '14px',
-                              width: '100%',
-                              fontWeight: 'bold',
-                              marginBottom: '5px'
-                            }}
-                          >
-                            Proceed to Market & Negotiation Agent
-                          </button>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                            <button 
+                              onClick={() => {
+                                fetchLandedCost(supplier.avg_unit_price_usd * (parsedItem?.quantity || 1000) * 83.5, parsedItem?.hs_code_suggestion, supplier.country);
+                              }} 
+                              style={{ backgroundColor: '#0d6efd', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px' }}>
+                              Simulate Landed Cost (Landed)
+                            </button>
+                            <button
+                              onClick={() => runNegotiationAgent(supplier)}
+                              style={{
+                                backgroundColor: '#fd7e14',
+                                color: 'white',
+                                border: 'none',
+                                padding: '8px 16px',
+                                borderRadius: '5px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                width: '100%',
+                                fontWeight: 'bold',
+                                marginBottom: '5px'
+                              }}
+                            >
+                              Proceed to Market & Negotiation Agent
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1880,6 +1490,117 @@ const EnhancedTradePlatform = () => {
         </div>
       )}
 
+      {/* Quality & Escrow Ledger Tab */}
+      {activeTab === 'quality-escrow' && (
+        <div style={{ border: '2px solid #20c997', borderRadius: '10px', padding: '30px', backgroundColor: '#f8f9fa' }}>
+           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ color: '#20c997', margin: 0 }}>Autonomous Quality Control & Financial Escrow</h2>
+              <button 
+                onClick={() => {
+                  runInspection();
+                  fetchEscrowLedger();
+                }}
+                disabled={loading}
+                style={{ backgroundColor: '#20c997', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                {loading ? 'Agents Syncing...' : '🔄 Refresh Live Audit Data'}
+              </button>
+           </div>
+
+           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              {/* QC Section */}
+              <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '10px', border: '1px solid #ced4da', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                <h4 style={{ color: '#495057', borderBottom: '2px solid #20c997', paddingBottom: '10px', marginBottom: '15px' }}>
+                  Laboratory Inspection Report
+                </h4>
+                {qcReport ? (
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                      <strong>Agency: {qcReport.inspector}</strong>
+                      <span style={{ color: '#28a745', fontWeight: 'bold' }}>Grade {qcReport.overall_grade}</span>
+                    </div>
+                    <div style={{ backgroundColor: '#f8f9fa', padding: '10px', borderRadius: '5px' }}>
+                      {qcReport.parameters.map((p, i) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < qcReport.parameters.length -1 ? '1px solid #dee2e6' : 'none' }}>
+                          <span style={{ fontSize: '13px' }}>{p.name}</span>
+                          <span style={{ fontWeight: 'bold', fontSize: '13px', color: p.status === 'PASS' ? '#28a745' : '#dc3545' }}>{p.result} ({p.status})</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ marginTop: '15px', padding: '10px', backgroundColor: qcReport.verdict.includes('Clear') ? '#d4edda' : '#f8d7da', borderRadius: '5px', textAlign: 'center' }}>
+                       <strong style={{ color: qcReport.verdict.includes('Clear') ? '#155724' : '#721c24' }}>VERDICT: {qcReport.verdict}</strong>
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#6c757d', marginTop: '10px', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                      Seal: {qcReport.digital_seal_hash}
+                    </div>
+                  </div>
+                ) : (
+                  <p style={{ color: '#6c757d', textAlign: 'center' }}>Awaiting Inspector Arrival at Origin Terminal...</p>
+                )}
+              </div>
+
+              {/* Escrow Ledger Section */}
+              <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '10px', border: '1px solid #ced4da', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                <h4 style={{ color: '#495057', borderBottom: '2px solid #0d6efd', paddingBottom: '10px', marginBottom: '15px' }}>
+                  DLT Financial Ledger (Escrow)
+                </h4>
+                {escrowLedger ? (
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                      <span><strong>Contract Address:</strong></span>
+                      <span style={{ fontSize: '11px', fontFamily: 'monospace', color: '#0d6efd' }}>{escrowLedger.escrow_address.substring(0,12)}...</span>
+                    </div>
+                    <div style={{ marginBottom: '20px' }}>
+                       {escrowLedger.milestones.map((m, i) => (
+                         <div key={i} style={{ marginBottom: '10px', padding: '10px', border: '1px solid #dee2e6', borderRadius: '5px', backgroundColor: m.status === 'RELEASED' ? '#e7f3ff' : 'transparent' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                               <span style={{ fontWeight: 'bold', fontSize: '13px' }}>{m.name} ({m.percentage}%)</span>
+                               <span style={{ fontSize: '11px', fontWeight: 'bold', color: m.status === 'RELEASED' ? '#0d6efd' : '#6c757d' }}>{m.status}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5px' }}>
+                               <span style={{ fontSize: '14px', color: '#28a745', fontWeight: 'bold' }}>₹{m.amount.toLocaleString()}</span>
+                               {m.tx_hash && <span style={{ fontSize: '10px', fontFamily: 'monospace' }}>Tx: {m.tx_hash}</span>}
+                            </div>
+                         </div>
+                       ))}
+                    </div>
+                    <div style={{ borderTop: '2px solid #dee2e6', paddingTop: '15px' }}>
+                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                          <span style={{ color: '#6c757d' }}>Total Value:</span>
+                          <strong>₹{escrowLedger.total_value.toLocaleString()}</strong>
+                       </div>
+                       <div style={{ display: 'flex', justifyContent: 'space-between', color: '#0d6efd' }}>
+                          <span>Released to Supplier:</span>
+                          <strong>₹{escrowLedger.total_released.toLocaleString()}</strong>
+                       </div>
+                       <div style={{ display: 'flex', justifyContent: 'space-between', color: '#dc3545' }}>
+                          <span>Remaining in Escrow:</span>
+                          <strong>₹{escrowLedger.total_locked.toLocaleString()}</strong>
+                       </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p style={{ color: '#6c757d', textAlign: 'center' }}>Contract awaiting initial funding milestone...</p>
+                )}
+              </div>
+           </div>
+
+           {qcReport && escrowLedger && (
+             <div style={{ marginTop: '30px', textAlign: 'center' }}>
+                <button 
+                  onClick={() => {
+                    setActiveTab('logistics-agent');
+                    fetchLogisticsRoutes();
+                  }}
+                  style={{ backgroundColor: '#6f42c1', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold', fontSize: '16px' }}
+                >
+                  Quality Verified & Funds Secured: Proceed to Inbound Logistics ➜
+                </button>
+             </div>
+           )}
+        </div>
+      )}
+
       {/* Logistics & Tracking Tab */}
       {activeTab === 'logistics-agent' && (
         <div style={{
@@ -2206,10 +1927,13 @@ const EnhancedTradePlatform = () => {
               
               <div style={{ backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '5px', marginBottom: '15px', borderLeft: '4px solid #fd7e14' }}>
                  <strong>Product:</strong> {negotiationResult.proposal.quantity} {negotiationResult.proposal.unit} of {negotiationResult.proposal.product_name} <br/>
-                 <strong>FOB Base Price (yfinance):</strong> {negotiationResult.proposal.base_price_fob} {negotiationResult.proposal.currency} <br/>
-                 <strong>Est. Freight & Insurance:</strong> {negotiationResult.proposal.freight_insurance} {negotiationResult.proposal.currency} <br/>
+                 <div style={{ fontSize: '12px', color: '#6c757d', marginBottom: '10px' }}>
+                    (Breakdown: {negotiationResult.proposal.quantity_kg} kg @ {negotiationResult.proposal.price_per_kg} {negotiationResult.proposal.currency}/kg)
+                 </div>
+                 <strong>FOB Base Price (yfinance):</strong> {negotiationResult.proposal.base_price_fob.toLocaleString()} {negotiationResult.proposal.currency} <br/>
+                 <strong>Est. Freight & Insurance:</strong> {negotiationResult.proposal.freight_insurance.toLocaleString()} {negotiationResult.proposal.currency} <br/>
                  <strong style={{ fontSize: '18px', color: '#dc3545', display: 'block', marginTop: '10px' }}>
-                    Total CIF Offer: {negotiationResult.proposal.total_cif_quote} {negotiationResult.proposal.currency}
+                    Total CIF Offer: {negotiationResult.proposal.total_cif_quote.toLocaleString()} {negotiationResult.proposal.currency}
                  </strong>
               </div>
               

@@ -2,12 +2,27 @@ import os
 from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
+import os
+from dotenv import load_dotenv
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import HumanMessage
 from langchain.tools import tool
+from app.core.trade_state import TradeState
 
 # Load environment variables
 load_dotenv()
 
 # We securely wrap our deterministic Python agents into LangChain Tools
+@tool
+def trigger_catalog_and_match(product_description: str) -> str:
+    """
+    Use this tool when an Exporter wants to list their products to sell or export.
+    This triggers the Catalog Agent to autonomously structure their inventory 
+    and then triggers the Buyer Matchmaker to find buyers.
+    Input should be the descriptive text of what they are selling.
+    """
+    return f"ACTION_ROUTING: CATALOG_AND_MATCH_TRIGGERED for '{product_description}'. Autonomously structuring catalog and finding global buyers."
+
 @tool
 def trigger_matchmaker_search(commodity: str) -> str:
     """
@@ -84,12 +99,14 @@ class TradeOSOrchestrator:
             self.llm = None
             
         self.tools = [
+            trigger_catalog_and_match,
             trigger_matchmaker_search,
             fetch_live_commodity_price,
             trigger_negotiation_and_documents,
             assess_supplier_risk,
             plan_logistics
         ]
+        self.active_trade = TradeState()
         
         if self.llm:
             try:
@@ -142,13 +159,22 @@ class TradeOSOrchestrator:
                 action_type = "chat"
                 action_target = None
                 
-                if tool_name == "trigger_matchmaker_search":
+                if tool_name == "trigger_catalog_and_match":
+                    action_type = "execute_catalog_generation"
+                    action_target = tool_args.get('product_description', '')
+                    self.active_trade.advance_state("CATALOG_GENERATED", {"description": action_target})
+                    response = f"ACTION_ROUTING: CATALOG_AND_MATCH_TRIGGERED for '{action_target}'. TradeState Updated. Autonomously structuring catalog and finding global buyers."
+                    
+                elif tool_name == "trigger_matchmaker_search":
                     action_type = "navigate_matchmaker"
                     action_target = tool_args.get('commodity', '')
+                    self.active_trade.advance_state("BUYERS_MATCHED", [{"simulated": action_target}])
                     response = f"ACTION_ROUTING: MATCHMAKER_TRIGGERED for {action_target}. Opening frontend Matchmaker Agent."
                     
                 elif tool_name == "trigger_negotiation_and_documents":
                     action_type = "execute_trade_pipeline"
+                    self.active_trade.advance_state("NEGOTIATION_COMPLETE", {"price": 1500, "terms": "LC"})
+                    self.active_trade.advance_state("DOCUMENTS_GENERATED", {"hash": "0x123"})
                     response = f"ACTION_ROUTING: TRADE_FINALIZED for {tool_args.get('commodity')} with {tool_args.get('supplier_name')}. Autonomously executing Negotiation and Document Generation pipelines."
                     
                 elif tool_name == "assess_supplier_risk":

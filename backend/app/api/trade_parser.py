@@ -9,6 +9,9 @@ from fastapi import APIRouter, HTTPException
 from typing import Dict, Any, List
 import re
 from datetime import datetime
+from app.database import get_database
+from app.core.events import event_bus
+import uuid
 
 router = APIRouter(tags=["Trade Parser"])
 
@@ -267,28 +270,45 @@ class TradeItemParser:
         return timing_info
 
     def _suggest_hs_code(self, product_info: Dict[str, Any]) -> str:
-        """Suggest HS code based on product category"""
+        """Suggest accurate HS code based on product and category"""
         
+        name = product_info.get("name", "").lower()
         category = product_info.get("category", "")
         
+        # High-demand SME product specific mapping
+        if "copper" in name: return "740311"
+        if "aluminum" in name or "aluminium" in name: return "760110"
+        if "pvc" in name or "plastic resin" in name: return "390410"
+        if "semiconductor" in name or "ic" in name or "chip" in name: return "854110"
+        if "api" in name or "pharmaceutical" in name: return "293339"
+        if "polyester" in name: return "540233"
+        if "silk" in name: return "500720"
+        if "denim" in name: return "520942"
+        if "textile machine" in name: return "844839"
+        if "food machine" in name: return "843810"
+        if "power tool" in name: return "846721"
+        if "fastener" in name or "bolt" in name: return "731815"
+        if "cocoa" in name: return "180100"
+        
+        # Category-level fallbacks
         if category == "spices":
-            return "0904"  # Pepper of the genus Piper
+            return "0910"  # Ginger, saffron, turmeric
         elif category == "beverages":
             return "0901"  # Coffee
         elif category == "grains":
-            return "1001"  # Wheat and meslin
+            return "1001"  # Wheat
         elif category == "vegetables":
-            return "0703"  # Onions, shallots, garlic
+            return "0703"  # Onions, garlic
         elif category == "fruits":
             return "0803"  # Bananas
         elif category == "textiles":
-            return "5201"  # Cotton, not carded or combed
+            return "5201"  # Cotton
         elif category == "metals":
-            return "7208"  # Iron or non-alloy steel
+            return "7208"  # Iron/Steel fallback
         elif category == "chemicals":
-            return "3102"  # Mineral or chemical fertilizers
+            return "3102"  # Fertilizer fallback
         elif category == "machinery":
-            return "8436"  # Other agricultural machinery
+            return "8436"  # Agri machinery fallback
         
         return "0000"  # Unknown
 
@@ -333,6 +353,16 @@ async def parse_trade_item(description: str) -> Dict[str, Any]:
             raise HTTPException(status_code=400, detail="Description too short. Please provide more details.")
         
         parsed_result = trade_parser.parse_trade_description(description)
+        
+        # Save RFQ to MongoDB and emit event
+        parsed_result["request_id"] = f"RFQ-{uuid.uuid4().hex[:8]}"
+        
+        db = get_database()
+        if db is not None:
+            await db.trade_requests.insert_one(parsed_result.copy())
+            
+            # Fire event to the continuous intelligence event bus
+            await event_bus.emit("RFQ_CREATED", parsed_result)
         
         return {
             "success": True,
