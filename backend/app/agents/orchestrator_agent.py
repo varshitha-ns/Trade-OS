@@ -24,11 +24,13 @@ def trigger_catalog_and_match(product_description: str) -> str:
     return f"ACTION_ROUTING: CATALOG_AND_MATCH_TRIGGERED for '{product_description}'. Autonomously structuring catalog and finding global buyers."
 
 @tool
-def trigger_matchmaker_search(commodity: str) -> str:
+def trigger_matchmaker_search(commodity: str, country: str = "") -> str:
     """
     Use this tool to find suppliers for a specific commodity or product.
     Input should be the name of the product (e.g., 'coffee', 'cotton shirts').
+    You can optionally pass a country if requested, though the primary search is by commodity.
     This triggers the deterministic TF-IDF Matchmaker Agent in the backend.
+    ALWAYS use this tool when the user asks to find suppliers, even if you can't satisfy all their filters.
     """
     # In a real system, this would call `autonomous_matchmaker_service.run_matchmaker(...)`
     # and return the results. For the orchestrator demo, we simulate the routing.

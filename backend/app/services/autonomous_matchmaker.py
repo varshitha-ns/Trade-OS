@@ -178,6 +178,9 @@ class AutonomousMatchmakerService:
         if product_name:
             product_eligible = []
             for supplier in suppliers:
+                supplier_commodity = str(supplier.get("commodity_name", "")).strip().lower()
+                supplier_products = [str(p).strip().lower() for p in supplier.get("products", [])]
+                
                 # Robust fuzzy matching: check if product_name (e.g. 'copper') is in commodity name (e.g. 'copper cathodes')
                 # Also check word-level match to handle 'copper' vs 'coppers'
                 commodity_words = set(supplier_commodity.split())
@@ -194,9 +197,9 @@ class AutonomousMatchmakerService:
                 if is_match:
                     product_eligible.append(supplier)
             
-            # If we found matches, use them. 
-            if product_eligible:
-                suppliers = product_eligible
+            # STRICT filtering: If product_name was provided, only keep matched suppliers.
+            # If none matched, it correctly reduces the list to 0.
+            suppliers = product_eligible
         
         after_product_count = len(suppliers)
 
@@ -342,6 +345,7 @@ class AutonomousMatchmakerService:
                     "country": supplier.get("country"),
                     "hs_code": supplier.get("hs_code"),
                     "commodity_name": supplier.get("commodity_name"),
+                    "avg_unit_price_usd": self._to_float(supplier.get("avg_unit_price_usd"), default=100.0),
                     "final_score": round(final_score, 4),
                     "success_rate": round(self._to_float(supplier.get("reliability_score"), default=0.0), 4),
                     "rating": round(self._to_float(supplier.get("buyer_rating"), default=0.0), 2),

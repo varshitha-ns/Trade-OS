@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import connect_to_mongo, close_mongo_connection
 from app.routes import auth, users, marketplace
 from app.core.subscribers import startup_event_subscriptions
-from app.api import matchmaker, trade_parser, ocr, aadhaar_verification, document_agent_api, negotiation_api, orchestrator_api, risk_api, logistics_api, buyer_matchmaker_api, catalog_api, qc_api, escrow_api, co_import_api
+from app.api import matchmaker, trade_parser, ocr, aadhaar_verification, document_agent_api, negotiation_api, orchestrator_api, risk_api, logistics_api, buyer_matchmaker_api, catalog_api, qc_api, escrow_api, co_import_api, live_feed_api, deal_room_api
 from app.services.trade_intelligence import intelligence_service
 
 app = FastAPI(title="TradeOS Platform", version="1.0.0")
@@ -37,6 +37,8 @@ app.include_router(catalog_api.router, prefix="/api/catalog", tags=["Catalog Gen
 app.include_router(qc_api.router, prefix="/api/qc", tags=["Quality Control"])
 app.include_router(escrow_api.router, prefix="/api/escrow", tags=["Escrow Ledger"])
 app.include_router(co_import_api.router, prefix="/api/co-import", tags=["MOQ Aggregator"])
+app.include_router(live_feed_api.router, prefix="/api/live-feed", tags=["Live Dashboard Feed"])
+app.include_router(deal_room_api.router, prefix="/api/deal-room", tags=["Multiplayer Deal Room"])
 
 @app.get("/api/intelligence/feasibility")
 async def get_feasibility(product: str, hs_code: str):

@@ -22,16 +22,21 @@ class NegotiationAgent:
         commodity = payload.get("product_name", "Unknown Product")
         quantity = payload.get("quantity", 1000)
         supplier_initial_quote = float(payload.get("price", 10.0))
-        
-        print(f"\n🤝 [Negotiation Agent] INITIATING NEGOTIATION WITH MOCK SUPPLIER")
-        print(f"   [Negotiation Agent] Commodity: {commodity} | Quantity: {quantity}")
-        print(f"   [Negotiation Agent] Supplier Initial Quote: ₹{supplier_initial_quote}")
 
         # 1. Ask Market Intelligence Agent for Today's Value
         market_analysis = market_agent.analyze_market_price(commodity)
         market_price = market_analysis["market_price"]
         curr = market_analysis.get("currency", "INR")
         trend = market_analysis["market_trend"]
+
+        # If frontend sent a hardcoded dummy price (like 1250) that makes no sense,
+        # override it to simulate a realistic supplier (15% markup over FMV).
+        if supplier_initial_quote < (market_price * 0.5) or supplier_initial_quote == 1250.0:
+            supplier_initial_quote = round(market_price * 1.15, 2)
+            
+        print(f"\n🤝 [Negotiation Agent] INITIATING NEGOTIATION WITH MOCK SUPPLIER")
+        print(f"   [Negotiation Agent] Commodity: {commodity} | Quantity: {quantity}")
+        print(f"   [Negotiation Agent] Supplier Initial Quote: ₹{supplier_initial_quote}")
         
         # 2. Compute Target Objective
         target_price = round(self._calculate_target_price(market_price, supplier_initial_quote), 2)

@@ -23,13 +23,17 @@ class TradeItemParser:
         self.product_categories = {
             "spices": ["turmeric", "pepper", "cinnamon", "clove", "cardamom", "ginger", "cumin", "coriander"],
             "beverages": ["coffee", "tea", "cocoa"],
-            "grains": ["wheat", "rice", "corn", "barley", "oats", "millet", "sorghum"],
+            "grains": ["wheat", "rice", "corn", "barley", "oats", "millet", "sorghum", "quinoa"],
             "vegetables": ["tomato", "potato", "onion", "carrot", "cabbage", "lettuce", "spinach"],
             "fruits": ["apple", "banana", "orange", "mango", "grape", "strawberry", "pineapple"],
-            "textiles": ["cotton", "silk", "wool", "linen", "polyester", "nylon"],
-            "metals": ["steel", "aluminum", "copper", "zinc", "iron", "titanium"],
-            "chemicals": ["fertilizer", "pesticide", "herbicide", "industrial chemicals"],
-            "machinery": ["tractor", "harvester", "pump", "motor", "engine", "generator"]
+            "textiles": ["cotton", "silk", "wool", "linen", "polyester", "nylon", "denim", "fabric", "yarn"],
+            "metals": ["steel", "aluminum", "aluminium", "copper", "zinc", "iron", "titanium", "lithium"],
+            "chemicals": ["fertilizer", "urea", "pesticide", "herbicide", "solvent", "acid", "polyethylene", "chemicals"],
+            "machinery": ["tractor", "harvester", "pump", "motor", "engine", "generator", "bearings"],
+            "leather": ["leather", "vegan leather", "handbags", "shoes"],
+            "medical": ["surgical mask", "mask", "gloves", "antibiotic", "aspirin", "amoxicillin", "pharmaceutical"],
+            "electronics": ["semiconductor", "motherboard", "fiber optic", "cable", "display", "usb", "power bank", "phone case"],
+            "energy": ["solar panel", "wind turbine", "battery"]
         }
         
         # HS Code patterns for common products
@@ -127,7 +131,7 @@ class TradeItemParser:
         # If no category found, extract product from common trade phrases
         if not product_info["name"]:
             phrase_patterns = [
-                r'\b(?:import|export|buy|sell|trade)\s+(?:of\s+)?([a-z][a-z\s-]{2,})\b',
+                r'\b(?:import|export|buy|sell|trade)\s+(?:of\s+)?(?:\d+(?:[.,]\d+)?\s*(?:kg|kilograms?|tons?|mt|metric tons?|units?|pieces?|sets?|boxes|cartons?|crates?|bales?|meters?|yards?|liters?|gallons?)?\s+)?([a-z][a-z\s-]{2,})\b',
                 r'\bof\s+([a-z][a-z\s-]{2,})\b',
             ]
             for pattern in phrase_patterns:
@@ -272,23 +276,23 @@ class TradeItemParser:
     def _suggest_hs_code(self, product_info: Dict[str, Any]) -> str:
         """Suggest accurate HS code based on product and category"""
         
-        name = product_info.get("name", "").lower()
+        name = f" {product_info.get('name', '').lower()} "
         category = product_info.get("category", "")
         
         # High-demand SME product specific mapping
-        if "copper" in name: return "740311"
-        if "aluminum" in name or "aluminium" in name: return "760110"
-        if "pvc" in name or "plastic resin" in name: return "390410"
-        if "semiconductor" in name or "ic" in name or "chip" in name: return "854110"
-        if "api" in name or "pharmaceutical" in name: return "293339"
-        if "polyester" in name: return "540233"
-        if "silk" in name: return "500720"
-        if "denim" in name: return "520942"
-        if "textile machine" in name: return "844839"
-        if "food machine" in name: return "843810"
-        if "power tool" in name: return "846721"
-        if "fastener" in name or "bolt" in name: return "731815"
-        if "cocoa" in name: return "180100"
+        if " copper " in name: return "740311"
+        if " aluminum " in name or " aluminium " in name: return "760110"
+        if " pvc " in name or " plastic resin " in name: return "390410"
+        if " semiconductor " in name or " ic " in name or " chip " in name: return "854110"
+        if " api " in name or " pharmaceutical " in name: return "293339"
+        if " polyester " in name: return "540233"
+        if " silk " in name: return "500720"
+        if " denim " in name: return "520942"
+        if " textile machine " in name: return "844839"
+        if " food machine " in name: return "843810"
+        if " power tool " in name: return "846721"
+        if " fastener " in name or " bolt " in name: return "731815"
+        if " cocoa " in name: return "180100"
         
         # Category-level fallbacks
         if category == "spices":

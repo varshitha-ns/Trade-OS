@@ -1,0 +1,1319 @@
+--- PAGE 1 ---
+ 
+ 
+ 
+ 
+PEOPLE’S  EDUCATION  TRUST  (R), MANDYA  
+P.E.S.  COLLEGE  OF ENGINEERING  MANDYA  
+(An Autonomous  Institution  under  VTU,  Belagavi,  Aided  by Govt.  of Karnataka.)  
+ 
+ 
+Project  Report  on 
+“An Agentic  Business  to Business  (B2B)  Marketplace  for the Automation 
+and Simplification of Global Trade for Small and Medium -sized 
+Enterprises (SMEs) ” 
+ 
+Submitted  in partial  fulfilment  of the requirements 
+for the award of the Degree  
+BACHELOR  OF ENGINEERING  
+in 
+Computer  Science  and Engineering  (AI & ML) 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Submitted  by 
+KOMAL.N 
+USN:  4PS22CI060  
+Under  the Guidance  of 
+Prof. Ashwini M.C 
+Associate Professor  
+Department  of CS&E  (AI & ML) 
+PESCE, Mandya  
+2025 -2026  
+ 
+Department  of Computer  Science  & Engineering 
+(Artificial Intelligence & Machine Learning)  
+
+--- PAGE 2 ---
+ 
+ 
+PEOPLE’S  EDUCATION  TRUST  (R), MANDYA  
+P.E.S.  COLLEGE  OF ENGINEERING  MANDYA  
+(An Autonomous  Institution  under  VTU,  Belagavi,  Aided  by Govt.  of Karnataka .) 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+This is to  certify that the work entitled “ An Agentic B2B Marketplace for the 
+Automation and Simplification of Global Trade for SMEs ” is a bona fide work carried 
+out by Komal N (4PS22CI060), A Student of VII Semester, Bachelor of Engineering in 
+Computer Science and Engineering (AI & ML) at PES College of Engineering, Mandya, 
+under Vishveshvaraya Technological University (VTU), Belagavi, during the academic 
+year 2025 –2026. The project report has been approved as it satisfies the academic 
+requirements prescribed for the Project work of VII Semester.  
+ 
+ 
+ 
+ 
+ 
+Signature  of Internal  Guide  
+ 
+Prof.  Ashwini M C 
+Assistant  Professor,  Department  of 
+CS&E  (AI&ML)  
+PESCE,  Mandya  Signature  of HOD  
+ 
+Dr. Mahesh  Kaluti  
+Head of Department, 
+Department  of CS&E  (AI&ML), 
+PESCE, Mandya  
+
+--- PAGE 3 ---
+ 
+ 
+DECLARATION  
+ 
+We hereby declare that the project titled “ An Agentic B2B Marketplace for the 
+Automation and Simplification of Global Trade for SMEs ” is carried out  by 
+Komal.N  (4PS22CI060),  under  the guidance  of Prof.  Ashwini  M.C,  Assistant  Professor, 
+Department of Computer Science and Engineering (AI & ML), PES College of 
+Engineering, Mandya, in partial fulfilment of the academic requirements for the Mini 
+Project work of VI Semester, Bachelor of Engineering under Visvesvaraya 
+Technological University (VTU), Belagavi, during the academic year 2025 –2026.  
+We also declare that this project has not been submitted to any other university or 
+institution for the award of any degree or diploma.  
+ 
+Date:  22/12/2025  
+ 
+Place:  Mandya  Komal.N 
+4PS22CI060  
+
+--- PAGE 4 ---
+ACKNOWLEDGEMENT  
+ 
+An endeavour becomes successful only when it is undertaken with proper guidance and 
+blessings. I would like to express my heartfelt gratitude to all those who supported and 
+guided me throughout this project.  
+First and foremost, I sincerely thank Dr. N. L. Murali Krishna , Principal, PES College of 
+Engineering (PESCE), for his constant support and encouragement, which inspired me 
+throughout the course of this project.  
+I extend my sincere thanks to Dr. Mahesh Kaluti , Professor and Head, Department of 
+Computer Science and Engineering (AI & ML), PESCE, for giving me the opportunity to 
+carry  out this project as part of the curriculum and for  providing  the necessary  resources and 
+support.  
+My heartfelt appreciation goes to Prof. Ashwini M.C , Assistant Professor, Department of 
+Computer Science and Engineering (AI & ML), PESCE, for serving as my project guide. 
+His timely feedback, technical support, and consistent encouragement were instrumental in 
+the successful completion of this work.  
+Finally, I thank all the teaching and non -teaching staff of the Department of Computer 
+Science and Engineering (AI & ML), PESCE, and the peers for their direct and indirect 
+support during the course of this project.  
+
+--- PAGE 5 ---
+ 
+ 
+ABSTRACT  
+ 
+Global supply chains are undergoing rapid digital transformation under the paradigm of 
+Logistics 4.0. Despite this progress, Small and Medium -sized Enterprises (SMEs) 
+continue to face significant challenges in accessing and participating in international trade. 
+Regulatory complexity, extensive documentation requirements, limited access to trade 
+finance, and fragmented digital systems increase operational friction and reduce 
+competitiveness  for SMEs  in global  markets.  
+ 
+This project presents TradeOS , an agentic, AI -driven B2B marketplace designed to 
+automate, streamline, and secure the complete trade lifecycle for SMEs. The proposed 
+system is structured as a tri-layered architecture consisting of: (1) a Presentation Layer 
+enabling verified partner discovery, (2) an Intelligence Layer incorporating predictive 
+analytics and forecasting models, and (3) an Automation Layer that manages end -to-end 
+trade execution.  
+ 
+ 
+At the core of TradeOS is an Agentic AI Co -pilot , powered by a Multi -Agent System 
+(MAS) capable of coordinating trade processes autonomously. The system integrates 
+specialized agents such as the DocuAgent , which employs Transformer -based NLP for 
+automated documentation analysis and HS Code classification; the RiskAgent , which 
+performs multi -factor, real -time risk assessment using stochastic modelling; the 
+LogisticsAgent , which computes optimal logistics routes; and the EscrowAgent , which 
+ensures secure, milestone -based payment settlement through smart contracts on a 
+Distributed Ledger Technology (DLT) Trust Layer . 
+ 
+The project follows the Agile Scrum methodology , with iterative development and 
+continuous validation. A pilot test route  (Bengaluru → Hamburg)  is used  to evaluate  system 
+performance.  
+ 
+Overall, TradeOS aims to provide SMEs with a unified, intelligent, and secure platform for 
+global  trade, enhancing  supply  chain resilience and setting  a new benchmark for transparent 
+and user - centric trade automation.  
+
+--- PAGE 6 ---
+ 
+ 
+TABLE  OF CONTENTS  
+ 
+ 
+Chapter  1: Introduction  
+1.1 Problem  Domain  ................................ ................................ ................................ .. 01 
+1.2 Problem  Statement  ................................ ................................ ...............................  01 
+1.3 Core  Objectives  ................................ ................................ ................................ ... 02 
+1.4 Scope  ................................ ................................ ................................ ...................  02 
+Chapter  2: Literature  Survey  
+2.1 Existing  Work  and Research  Gaps  ................................ ................................ ........  03 
+2.2 Analysis  of Existing  System  ................................ ................................ ..................  03 
+2.3 Proposed  System  and Overview  ................................ ................................ ............  04 
+2.4 Tools  and Technology  Survey  ................................ ................................ ...............  04 
+2.5 Literature  Review  and Summary  ................................ ................................ ...........  05 
+2.6 Conclusion  ................................ ................................ ................................ .............  05 
+Chapter  3: Proposed System.  
+3.1 Overview  of the Proposed  System  ................................ ................................ .........  06 
+3.2 System  Methodology  ................................ ................................ ..............................  06 
+3.3 Multi -Agent  Workflow  Strategy  ................................ ................................ ............  07 
+3.4 Trade  Lifecycle  Automation  Framework  ................................ ...............................  08 
+3.5 Key Functional Outcomes  ................................ ................................ ......................  08 
+3.6 Feasibility  Study  ................................ ................................ ................................ .... 08 
+Chapter  4: Methodology  
+4.1 Workflow and Stages  ................................ ................................ ............................  08 
+Chapter  5 : System Design.  
+5.1 System  Architecture ................................ ................................ ................................  09 
+5.2 Database  Design  ................................ ................................ ................................ ..... 13 
+ 
+
+--- PAGE 7 ---
+ 
+ 
+5.3 Workflow  and Data  Flow  Diagrams  ................................ ................................ ........  14 
+5.4 API Design &  Communication  Model  ................................ ................................ .... 16 
+ 
+Chapter  6: Technology  Stack   
+6.1 Technology  Stack  ................................ ................................ ................................ ... 18 
+Chapter  7: Implementation  
+7.1 Implementation  Plan ................................ ................................ ................................  19 
+7.2 Frontend  / Backend  Integration  ................................ ................................ ...............  20 
+7.3 Deployment  Environment  ................................ ................................ .......................  20 
+7.4 Project  Execution  and Management  Plan ................................ ................................  20 
+7.5  Risk Assessment and  Mitigation  ................................ ................................ ............  21 
+Chapter  8: Result and Analysis  
+8.1 Baseline  for Comparison: “The  Manual  Workflow  Model”  ................................ ... 22 
+8.2 Trade  Simulation  Environment  ................................ ................................ ...............  22 
+8.3 Key Performance  Indicators  (KPIs)  ................................ ................................ ........  23 
+8.4 Outcome  Interpretation  ................................ ................................ ............................  23 
+Chapter  9: Conclusion  
+Conclusion  ................................ ................................ ................................ ......................  24 
+APPENDIX  – Publication  Details  
+References  ................................ ................................ ................................ ......................  25 
+LIST  OF FIGURES  
+Fig 4.1 Three -layer  distributed  architecture  ................................ ...............................  10 
+Fig 4.2 High -Level  Architecture  ................................ ................................ ................ 12 
+
+--- PAGE 8 ---
+1  Chapter  1: Introduction  
+ 
+1.1 Introduction  
+Small and Medium -sized Enterprises (SMEs) are critical drivers of global trade, yet they continue to 
+face barriers such as regulatory complexity, lack of reliable partners, financial risks, and limited 
+supply chain visibility. These challenges restrict their ability to compete with larger corporations in 
+international markets. Recent advancements in Artificial Intelligence, blockchain and multi -agent 
+systems offer an opportunity to simplify and automate the trade process. However, most digital trade 
+platforms are designed for large enterprises, leaving SMEs underserved.  
+ 
+This project, TradeOS , proposes an agentic B2B marketplace that integrates a cognitive co -pilot 
+powered by multi -agent systems to manage the entire trade lifecycle —from compliance and 
+documentation to logistics and payment settlement. The aim is to democratize global trade by 
+reducing operational friction and enabling SMEs to participate more efficiently in international 
+markets  
+ 
+ 
+1.2 Problem  Statement  
+The participation of Small and Medium -sized Enterprises (SMEs) in the global value chain is 
+critically restricted by information asymmetry and operational complexities . Despite their 
+significant contribution  to the economy,  SMEs  face challenges  that prevent  them  from  fully  engaging 
+in international trade. The major issues addressed in this research are as follows:  
+ 
+• SMEs  struggle  to interpret  and comply  with diverse  international  trade  regulations,  tariffs,  and 
+customs documentation standards, leading to costly delays and penalties. 
+• SMEs are highly vulnerable to financial risks such as currency fluctuations and lack access to 
+advanced trade finance instruments. 
+• Lack  of end-to-end supply  chain  visibility  exposes SMEs  to disruptions  caused  by geopolitical 
+instability, extreme weather, and logistical bottlenecks.  
+ 
+The core problem is the absence of an intelligent, automated, and collaborative platform that 
+integrates partner discovery, regulatory compliance, risk assessment, and financial settlement into a 
+unified workflow, specifically for SMEs  
+
+--- PAGE 9 ---
+2  1.3 Core  Objectives  
+ 
+The main  objectives of  the project are: 
+ 
+• To design a tri-layered system architecture (Marketplace, Intelligence, Automation) for a 
+scalable and secure B2B trade platform.  
+• To architect and validate a cognitive multi -agent system (MAS), potentially employing a 
+Belief -Desire -Intention (BDI) model, for autonomous trade execution.  
+• To engineer a suite of specialized agents, including a DocuAgent utilizing a hybrid OCR and 
+Transformer -based NLP model for semantic data extraction, and a RiskAgent employing 
+stochastic modeling for multi -factor risk assessment.  
+• To develop and test a prototype on a defined trade route (e.g., Bengaluru, India to Hamburg, 
+Germany) to quantify the reduction in process lead time and compliance errors.  
+ 
+ 
+1.4 Scope  
+ 
+The project focuses on developing a functional prototype of the TradeOS platform. The scope 
+includes:  
+ 
+• Architecture:  Designing  the three  operational  layers —Presentation,  Intelligence,  and 
+Automation —along with a DLT -based Trust Layer.  
+• Agent  Development:  Implementing  core logic  for five key agents:  MatchmakerAgent,  
+DocuAgent, RiskAgent, LogisticsAgent, and EscrowAgent.  
+• Validation:  Demonstrating  the complete  trade  process  through  a sample  trade  scenario.  
+• Technology  Stack:  Using  Python,  FastAPI,  and agent -frameworks  such as LangChain  or 
+Autogen for system development.  
+ 
+To conclude, this chapter establishes the foundation for the TradeOS project by outlining the 
+challenges faced by SMEs, the core motivations, and the objectives driving the proposed solution. 
+The definitions of scope and system goals presented here serve as the basis for the architectural 
+design and technical methodology discussed in the subsequent chapters.  
+ 
+. 
+
+--- PAGE 10 ---
+3  Chapter  2: Literature  Survey  
+ 
+2.1 Existing  Work  and Research  Gaps  
+Existing literature highlights significant advancements in individual components of global trade 
+automation, such as AI -based HS code classification, blockchain -enabled traceability, and multi - 
+agent systems for supply chain decision -making. However, these solutions remain fragmented and  
+are not designed specifically for SMEs.  
+ 
+Key gaps identified  include:  
+ 
+• Lack  of integration  across  compliance,  logistics,  risk modelling,  and payments.  
+• Limited  automation,  resulting  in continued  dependency  on manual workflows.  
+• High  complexity  and cost of existing  ERP/SCM  platforms,  making  them  unsuitable  for 
+SMEs.  
+• Absence of an end -to-end intelligent system that can autonomously execute complete trade  
+workflows.  
+ 
+2.2 Analysis  of Existing  Systems  
+Current  B2B trade  systems  suffer  from  operational  fragmentation  and limited  intelligence:  
+ 
+a) Manual  Brokerage  Processes  
+ 
+SMEs commonly rely on emails, spreadsheets, and paper -based coordination for freight forwarding, 
+customs clearance, and payments. These disconnected practices lead to frequent errors, poor 
+visibility, and heavy reliance on intermediaries.  
+ 
+b) Digital  Marketplaces  
+ 
+Platforms like Alibaba.com provide global supplier discovery but lack automated compliance 
+verification, logistics planning, and risk assessment. Execution remains largely manual.  
+ 
+c) ERP  and SCM  Platforms  
+ 
+Enterprise -grade solutions such as SAP Ariba and Oracle SCM offer integrated workflows but are 
+costly, resource -intensive, and too complex for SME adoption.  
+
+--- PAGE 11 ---
+4  d) Specialized  Digital  Tools  
+Standalone tools exist for HS code classification (NLP -based), blockchain trade finance, and multi - 
+agent logistics research. However, they operate independently and lack interoperability, forcing 
+SMEs to manually manage multiple systems.  
+ 
+Summary:  
+No existing system provides SMEs with a unified, intelligent, and fully automated trade execution  
+environment. This highlights the need for an integrated agentic platform like TradeOS.  
+ 
+ 
+2.3 Limitation s of Existing System  
+ 
+• Lack of Integration Across Functions  
+Current systems operate in silos, where key processes such as customs Lack documentation, 
+logistics management, and payment handling are not integrated into a unified platform. This 
+fragmentation forces SMEs to rely on multiple tools and platforms, resulting in inefficiencies, 
+increased operational complexity, and higher chances of data inconsistency.  
+ 
+• Not Tailored for Small and Medium Enterprises (SMEs)  
+Most existing solutions are designed to meet the needs of large enterprises, making them expensive 
+and technically complex for SMEs. Small businesses often lack the financial and technical resources 
+to adopt such systems, limiting their participation in global trade.  
+ 
+• Limited Automation and High Manual Dependency  
+Although partial automation exists, many critical processes still require manual intervention. Tasks 
+such as customs documentation, compliance verification, and transaction processing are often 
+performed manually, leading to delays, human errors, and reduced productivity.  
+ 
+• Lack of Trust and Transparency  
+Existing systems do not provide a comprehensive mechanism for verifying the authenticity and 
+credibility of trading partners. This lack of transparency increases the risk of fraud and disputes, 
+especially in cross -border transactions involving unfamiliar entities.  
+ 
+
+--- PAGE 12 ---
+5  2.4 Literature  Review  Summary  
+ 
+Author(s)  Title  Dataset/Source  Methodology  Relevance  to TradeOS  
+ 
+ 
+Chen  et al.  
+Neural Machine 
+Translation  for HS Code 
+Prediction   
+1.156M DHL  
+shipment  records   
+Attention -based 
+NMT   
+Forms  basis  for DocuAgent’s 
+HS Code automation  
+ 
+Xu et al. Will Bots Take  Over  the 
+Supply Chain?  132 papers  (1993 – 
+2020)  Systematic 
+Literature  Review  Supports  MAS  architecture 
+for automation  
+Chang  & 
+Chen  Blockchain  in Supply 
+Chain   
+106 articles   
+SLR Guides  Trust  Layer  and 
+EscrowAgent design  
+WTO 
+(2023)   
+World  Trade  Report  WTO  & World  Bank 
+data Economic 
+modelling  Validates  digital  trade 
+opportunity  for SMEs  
+ 
+WTO 
+(2016)   
+SME  Trade  Barriers 
+Report   
+Global  SME  survey 
+data  
+Policy  & economic 
+analysis   
+Defines SME -specific 
+obstacles  addressed  by 
+TradeOS  
+ 
+Forget  et 
+al.  
+Multi -Behaviour  Agent 
+Model   
+Industry 
+experimental 
+platform   
+Hybrid  agent 
+modelling   
+Informs RiskAgent and 
+LogisticsAgent  behaviour 
+design  
+ 
+2.5 Conclusion  
+The literature clearly shows that although individual technologies —AI, MAS, blockchain —have 
+matured, they remain siloed and inaccessible to SMEs. There is no unified system that integrates 
+compliance, risk, logistics, and payments into a single intelligent workflow. This gap directly 
+motivates  the development  of TradeOS,  an agentic  platform  tailored  to simplify  and automate  global 
+trade for SMEs.  
+
+--- PAGE 13 ---
+6  Chapter  3: Proposed  System  
+ 
+3.1 Overview  of the Proposed  System  
+TradeOS is a Smart Agentic B2B Marketplace designed to enable Small and Medium -sized 
+Enterprises (SMEs) to participate efficiently and confidently in global trade. The platform directly 
+connects verified international buyers and sellers, removing intermediaries and improving 
+transparency, trust, and operational control.The system integrates an Agentic AI Engine that 
+automates complex trade tasks such as documentation, HS Code classification, compliance checks, 
+logistics planning, risk evaluation, and secure payment execution. By replacing manual workflows 
+with autonomous software agents, TradeOS establishes a reliable, efficient, and intelligence -driven 
+trade ecosystem that enhances SME competitiveness.  
+ 
+Technically, TradeOS consolidates fragmented trade operations into a coordinated multi -agent 
+execution framework . Each phase of the trade lifecycle —partner discovery, document generation, 
+risk modelling, logistics routing, and settlement —is handled by agents that collaborate and make 
+context -aware decisions in real time.  
+ 
+3.2 Key Features  
+The TradeOS platform incorporates several advanced features to enable seamless, secure, and 
+intelligent trade execution for SMEs:  
+• Smart B2B Marketplace  : A digital platform that connects verified buyers and sellers 
+globally, eliminating intermediaries and improving trust and transparency.  
+• Agentic AI Automation  : The system employs multiple intelligent agents to automate 
+critical trade processes such as partner discovery, documentation, risk analysis, logistics 
+planning, and payment handling.  
+• HS Code Classification and Document Generation  : Automated classification of goods 
+using AI models and generation of customs -compliant documents, reducing manual effort 
+and errors.  
+• Risk Analysis and Predictive Modelling  : Real-time evaluation of risks based on external 
+data sources such as weather conditions, port congestion, and market fluctuations.  
+
+--- PAGE 14 ---
+7  • Optimized Logistics Planning  : Intelligent route selection and shipment planning using 
+APIs and optimization algorithms to minimize cost and delivery time.  
+• End-to-End Integration  : All stages of the trade lifecycle are integrated into a single 
+platform, improving efficiency and reducing dependency on multiple systems.  
+ 
+3.3 Proposed System Workflow  
+The operational  workflow  of TradeOS  is executed  through  a coordinated  set of intelligent  agents. 
+These agents communicate asynchronously, enabling scalable automation and fault tolerance.  
+ 
+Workflow  Steps:  
+Step  1: SME  Onboarding  
+ 
+The platform performs digital KYC and verification of trade credentials using rule -based logic and  
+API-supported authentication, ensuring that only legitimate businesses access the marketplace.  
+ 
+Step  2: Trade  Partner Discovery  
+ 
+The MatchmakerAgent identifies optimal partners using similarity scoring, product taxonomy 
+filters, and historical interaction heuristics. This reduces information asymmetry and accelerates 
+partner selection.  
+ 
+Step  3: Deal  Initiation  
+ 
+Once  trade  terms  are agreed  upon,  the Agentic  Co-pilot  activates  and begins  orchestrating  all 
+downstream operations.  
+ 
+Step  4: Autonomous  Multi -Agent  Execution  
+A coordinated  set of intelligent  agents  handles  mission -critical  tasks:  
+ 
+• DocuAgent : Performs  HS Code  classification  using  transformer -based  NLP  and generates 
+structured customs documents.  
+• RiskAgent : Conducts  risk estimation  using  real-time data (weather,  port congestion, 
+currency volatility).  
+• LogisticsAgent : Computes  optimal  shipping  routes  by interfacing  with logistics  APIs  and 
+applying risk constraint s. 
+• EscrowAgent : Executes  secure,  milestone -based payments  via blockchain smart  contracts.  
+ 
+Agents  communicate  asynchronously  to ensure  modular,  scalable,  and fault-tolerant execution.  
+ 
+
+--- PAGE 15 ---
+8  Step  5: Completion  and Settlement  
+Upon delivery confirmation, the EscrowAgent verifies the final state and releases payment 
+automatically  through smart  contract  logic. This  ensures  immutability,  transparency, and  dispute -free 
+settlement.  
+ 
+3.4 Trade  Lifecycle  Automation  Framework  
+TradeOS automates every  phase  of cross -border  trade:  
+ 
+1. Verification  Layer  – Validates  SMEs  before  entry.  
+2. Discovery  Layer  – Identifies  compatible  partners algorithmically.  
+3. Orchestration  Layer  – Activates  the Agentic  Co-pilot to execute  tasks.  
+4. Execution  Layer  – Agents  perform  documentation,  risk analysis,  routing,  and payment 
+control.  
+5. Settlement  Layer  – Smart  contracts  finalize  payments  securely.  
+ 
+This framework  ensures  deterministic  automation,  reducing  errors  and manual  bottlenecks.  
+ 
+ 
+3.5 Feasibility  Study  
+A . Technical  Feasibility  
+The system is technically  feasible  due to the  availability  of: 
+ 
+• LangChain/Autogen  for agent -based  automation  
+• FastAPI  for backend integration  
+• Python -based  NLP and ML  libraries  
+• Blockchain  systems  for secure  payment  execution  
+ 
+B. Operational Feasibility  
+ 
+The modular  multi -agent  architecture  allows  independent  development,  testing,  and scaling  of 
+components, ensuring maintainability.  
+ 
+ 
+ 
+ 
+ 
+
+--- PAGE 16 ---
+9  Chapter  4: Meth odology  
+ 
+The methodology for the proposed system, TradeOS , follows a structured multi -stage pipeline designed 
+to automate international trade workflows using a multi -agent architecture. The system integrates supplier 
+discovery, risk evaluation, document generation, and logistics planning into a unified framework. The 
+process ensures scalability, accuracy, and real -time decision -making.  
+ 
+4.1 Workflow and Stages  
+ 
+The TradeOS system operates through the following stages:  
+ 
+Stage 1: Data Collection  
+Sources:  
+Data is aggregated from multiple structured and real -time sources, including:  
+o International trade datasets (HS code -based trade data)  
+o Supplier datasets generated from Kaggle  
+o Government trade portals  
+o Commodity price datasets  
+o Logistics and routing datasets  
+APIs and Tools:  
+o Market price APIs (data.gov.in, commodity APIs)  
+o Weather APIs (OpenWeather)  
+o Currency exchange APIs (ExchangeRate API)  
+o Route APIs (OpenStreetMap / OSRM)  
+Volume:  
+• Handles large -scale structured datasets (1000 –2000+ records)  
+• Supports semi -real-time updates for dynamic risk evaluation  
+ 
+Stage 2: Data Pre -processing  
+Data Cleaning:  
+o Removal of missing and inconsistent data  
+o Standardization of HS codes and country names  
+o Normalization of numerical attributes  
+ 
+
+--- PAGE 17 ---
+10  Feature Engineering:  
+• Derived fields such as:  
+o reliability_score  
+o volatility_index  
+o trade_frequency  
+o logistics_distance  
+Noise Filtering:  
+• Removal of unrealistic synthetic entries  
+• Filtering irrelevant commodities or inactive trade routes  
+ 
+Stage 3: Matchmaker Agent (Supplier -Buyer Matching)  
+Matching Logic:  
+• HS Code similarity  
+• Country compatibility  
+• Supplier reliability score  
+• Capacity vs demand alignment  
+Algorithms Used:  
+• Rule -based filtering  
+• Weighted scoring model  
+Output:  
+• Top N supplier recommendations  
+• Ranked based on:  
+o success rate  
+o cost efficiency  
+o historical trade performance  
+ 
+Stage 4: Risk Assessment Agent  
+Risk Factors Analyzed:  
+• Supplier risk (reliability, disputes)  
+• Financial risk (currency volatility)  
+• Logistics risk (route delay, weather)  
+• Compliance risk (tariffs, restrictions)  
+• Market risk (price fluctuations)  
+ 
+
+--- PAGE 18 ---
+11  Data Sources:  
+• Weather API ( OpenWeather )  
+• Currency API ( ExchangeRate -API)  
+• Trade datasets ( UN Comtrade )  
+ 
+Scoring Mechanism:  
+• Weighted aggregation model:  
+Risk Score = f(Supplier + Financial + Logistics + Compliance + Market)  
+ 
+Output:  
+• Risk score (0 –10)  
+• Risk classification (Low / Medium / High)  
+• Recommendations (Escrow, alternate route, supplier change)  
+ 
+Stage 5: Document Agent  
+Functionality:  
+• Generates trade -compliant documents:  
+o Sales Contract  
+o Invoice  
+o Letter of Credit draft  
+o Bill of Lading draft  
+Approach:  
+• Template -based generation  
+• Rule -based compliance checks  
+Validation:  
+• Ensures:  
+o HS code correctness  
+o Trade term consistency  
+o Mandatory field completeness  
+ 
+Stage 6: Logistics Agent  
+Core Tasks:  
+• Route optimization  
+• Mode selection (Sea / Air / Land)  
+
+--- PAGE 19 ---
+12  • Carrier selection  
+• Shipment planning  
+APIs Used:  
+• Routing: OpenStreetMap   
+• Weather: OpenWeather   
+Decision Logic:  
+• Mode selection based on:  
+o delivery deadline  
+o quantity  
+o risk score  
+Output:  
+• Optimal route  
+• Estimated cost and delivery time  
+• Selected logistics carrier  
+ 
+Stage 7: Execution & Tracking  
+Shipment Monitoring:  
+• Tracks shipment stages:  
+o Dispatched  
+o In transit  
+o Delivered  
+o Delayed  
+Event Detection:  
+• Identifies:  
+o port delays  
+o weather disruptions  
+o route deviations  
+ 
+Stage 8: Visualization & User Interface  
+Dashboard Features:  
+• Supplier recommendations  
+• Risk analysis reports  
+• Logistics tracking  
+• Trade insights  
+
+--- PAGE 20 ---
+13  Tools:  
+• Interactive dashboards (e.g., Power BI / web UI)  
+• API-driven frontend  
+ 
+Stage 9: Evaluation and Validation  
+ 
+Performance Metrics:  
+1. Matching Accuracy:  
+• Precision of supplier recommendations  
+2. Risk Model Evaluation:  
+• Consistency of risk scoring  
+3. Logistics Optimization:  
+• Cost vs time efficiency  
+4. Validation Techniques:  
+• Cross -check with historical trade patterns  
+• Scenario -based simulation testing  
+5. Benchmarking:  
+• Compared against traditional trade workflows  
+• Evaluates automation efficiency and decision accuracy  
+ 
+
+--- PAGE 21 ---
+14  Chapter  5: System Design  
+ 
+ 
+5.1 System  Architecture  
+TradeOS is designed using a three -layer distributed architecture supported by an Agentic 
+Intelligence Layer and a Multi -Agent Automation Engine . This separation of concerns ensures 
+efficient processing, secure data handling, and robust multi -agent coordination.  
+ 
+Tri-Layer  Architecture  
+ 
+ 
+1. Presentation  Layer  (User  Interaction  Interface)  
+ 
+• Built  using  React.js and API-driven  communication.  
+• Handles  SME  onboarding,  KYC  verification,  partner  discovery,  trade  initiation,  and tracking 
+dashboards.  
+• Communication  occurs  through  an API gateway  for secure  access  control.  
+ 
+2. Intelligence  Layer  (Cognitive  Decision  Core)  
+ 
+• Hosts  AI-driven  components:  
+o Transformer -based  HS Code  classification  
+o NLP -driven  document  parsing  
+o Stochastic  risk prediction  models  
+o Market  and logistics  analytics  
+• Provides  inference  outputs to  the Automation  Layer.  
+• Enables  reasoning, context  sharing,  and dynamic decision -making.  
+ 
+3. Automation  Layer  (Agentic  Co-Pilot)  
+ 
+• Implements autonomous  trade  operations  using  a Multi -Agent  System  (MAS)  built with 
+LangChain/Autogen.  
+• Each  agent  executes  domain -specific  tasks  and communicates  through  an event -driven 
+messaging bus (Kafka/RabbitMQ).  
+• Ensures  deterministic,  rule-driven  execution of  trade  workflows.  
+
+--- PAGE 22 ---
+15   
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Fig 4.1 Three -layer  distributed  architecture 
+Agentic Intelligence Layer  
+ 
+This layer  enables  coordinated  decision -making  across  all autonomous  agents.  It provides:  
+ 
+• A shared  knowledge  base  (market  data,  partner  profiles,  risk datasets)  
+• Workflow  context propagation  
+• FIPA -style  ACL  message  formats  
+• An event -driven  communication  hub for inter-agent  collaboration  
+ 
+Specialized  Agents  in TradeOS  
+ 
+Agent  Technical  Role 
+MatchmakerAgent  Identifies  compatible  SMEs  using  similarity  scoring  and product  taxonomy.  
+DocuAgent  Performs  OCR,  HS Code  classification,  semantic  document  parsing,  and document 
+generation.  
+RiskAgent  Evaluates  logistics  and financial  risks  using  stochastic  models  and real-time data feeds.  
+LogisticsAgent  Computes  optimal  shipping  routes  using  carrier  APIs  and risk constraints.  
+EscrowAgent  Executes  secure  smart -contract  payments  and milestone -based  fund release.  
+
+
+--- PAGE 23 ---
+16  High -Level  System  Architecture  
+1. Presentation  Layer  (Marketplace  & UI) : 
+ 
+Web  and mobile  frontends  for user onboarding,  partner  discovery,  trade  initiation,  dashboards, 
+and document review. Exposes REST/GraphQL APIs to the backend.  
+2. Platform  / Orchestration  Layer  : 
+ 
+API gateway,  authentication  & authorization  (OAuth2  / JWT),  request  routing,  and service  mesh 
+for secure inter -service communication.  
+3. Intelligence  Layer  (Cognitive  Core) : 
+ 
+ML/NLP  services  for HS-code  classification,  demand  forecasting,  risk scoring,  and partner 
+recommendation. Model hosting (TF/PyTorch + model registry) with batch and real -time 
+inference endpoints.  
+4. Automation  Layer  (Agentic  Co-pilot)  : 
+ 
+Multi -agent  system  (MatchmakerAgent,  DocuAgent,  RiskAgent,  LogisticsAgent,  EscrowAgent) 
+that coordinates trade workflows, issues tasks, and executes automated actions via well -defined 
+agent APIs.  
+5. Data  & Integration  Layer  : 
+ 
+Event bus / message queue (Kafka or RabbitMQ) for asynchronous workflows, ETL pipelines, 
+and microservices.  Connectors  for external  systems:  customs  databases,  carrier  APIs,  market  data 
+feeds, and payment gateways.  
+6. Trust  & Persistence  Layer : 
+ 
+Transactional  database  (Postgres)  for core records,  time-series  store  for telemetry,  object  store  for 
+documents, and a distributed ledger / blockchain module for tamper -proof audit trails and escrow 
+smart contracts.  
+
+--- PAGE 24 ---
+17   
+ 
+Fig 4.2 High -Level  Architectur  
+
+
+--- PAGE 25 ---
+18  
+5.2 Database  Design  
+The system  uses a relational  database  (PostgreSQL)  for secure,  normalized  storage  of user,  trade, 
+logistics, and compliance data.  
+ 
+5.2.1 ER Diagram  
+ 
+ 
+5.2.2 Database  Schema  
+The following  SQL  Data  Definition  Language  (DDL)  statements  define  the structure  of the three  main  tables 
+in the database.  
+ 
+
+--- PAGE 26 ---
+19  5.2.3 Data  Dictionary  
+The following  tables  provide  a detailed  description  of each column  within  the database  schema.  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+5.3 Workflow  and Data  Flow  Diagrams  
+5.3.1 DFD  Level 0 (System  Context)  
+ 
+External  Entities:  Buyer  SME,  Seller  SME  
+Central  Process:  TradeOS  
+Data  Stores:  Users  DB, Trade  DB, Logistics  DB 
+Flows:  
+5.3.1.1  SMEs  → registration,  trade  data → TradeOS  
+5.3.1.2  TradeOS  → risk, routing,  documents  → Databases  
+5.3.1.3  TradeOS  → updates  → SMEs  
+ 
+5.3.2 DFD  Level 1 (Detailed Breakdown)  
+ 
+Modules:  
+ 
+1. User  Verification  
+2. MatchmakerAgent  (Partner  Discovery)  
+3. DocuAgent  (Document  Processing)  
+4. RiskAgent  (Risk  Evaluation)  
+5. LogisticsAgent  (Route  Planning)  
+6. EscrowAgent  (Payment  Settlement)  
+ 
+Each  module  interacts  with its corresponding  database  table  and triggers  subsequent  modules  via 
+events.  
+
+
+--- PAGE 27 ---
+20  5.3.3 System  Workflow (High -Level)  
+ 
+SME  registers  and is verified.  
+ 
+1. MatchmakerAgent  proposes  trade  partners.  
+2. SMEs  confirm  trade  → workflow  starts.  
+3. DocuAgent  generates  required  documents.  
+4. RiskAgent  computes  risk profile.  
+5. LogisticsAgent  plans  shipment  route.  
+6. Shipment  is executed.  
+7. EscrowAgent  confirms  conditions  and releases  payment.  
+ 
+5.3.4 Sequence  Diagram  (End -to-End Trade  Execution)  
+ 
+ 
+1. User  → System:  Initiate trade  
+2. System  → MatchmakerAgent:  Find partner  
+3. MatchmakerAgent  → System:  Return  match  
+4. System  → DocuAgent:  Generate  documents  
+5. System  → RiskAgent:  Compute  risk 
+6. System  → LogisticsAgent:  Compute  route  
+7. System  → EscrowAgent:  Lock  funds  
+8. LogisticsAgent  → System:  Update  shipment  
+9. EscrowAgent  → Blockchain:  Release  payment  
+
+
+--- PAGE 28 ---
+21  
+5.4 API Design  & Communication  Model  
+TradeOS  uses a hybrid REST  + Event -Driven  Messaging  model.  
+ 
+5.4.1 Core  API Endpoints  
+User  APIs  
+ 
+5.4.1.1  POST /register  — SME  registration  
+5.4.1.2  POST /verify — KYC  verification  
+5.4.1.3  GET /user/{id}  — Fetch  profile  
+ 
+Trade  APIs  
+ 
+5.4.1.4  POST /trade/initiate  
+5.4.1.5  GET /trade/{id}  
+5.4.1.6  POST /trade/update -status 
+ 
+Document  APIs  
+ 
+5.4.1.7  POST /doc/generate  
+5.4.1.8  GET /doc/{trade_id}  
+ 
+Escrow  APIs  
+ 
+5.4.1.9  POST /escrow/create  
+5.4.1.10  POST /escrow/release  
+ 
+
+--- PAGE 29 ---
+22  5.4.2 Authentication  Model  
+ 
+5.4.2.1  OAuth2  + JWT  for user-facing  APIs  
+5.4.2.2  Internal  agents  use service  keys for inter-agent  communication  
+5.4.2.3  Tokens  contain:  
+5.4.2.3.1  Role 
+5.4.2.3.2  Permissions  
+5.4.2.3.3  Expiry  
+5.4.2.3.4  Risk constraints  
+ 
+ 
+ 
+5.4.3 Agent -to-Agent  Communication  
+ 
+Messaging  Bus: RabbitMQ  / Kafka  
+Protocol:  Event -driven,  asynchronous  JSON  messages  
+ 
+Common  message  topics:  
+ 
+5.4.3.1  documents.ready  
+5.4.3.2  risk.updated  
+5.4.3.3  logistics.route_planned  
+5.4.3.4  escrow.release_triggered  
+ 
+ 
+ 
+5.4.4 Event -Driven  Workflow  
+ 
+Example  event  chain:  
+ 
+verification_complete  → 
+MatchmakerAgent deal_confirmed → 
+DocuAgent docs_generated → RiskAgent 
+risk_score_ready → LogisticsAgent 
+delivery_confirmed → EscrowAgent  
+
+--- PAGE 30 ---
+23                      Chapter  6: Technology  Stack  
+This chapter describes the implementation strategy adopted for developing the TradeOS platform. It 
+details the technology stack, module -wise development, agent implementation, system integration, 
+and the deployment environment used for validating the prototype.  
+ 
+6.1 Technology  Stack  
+The implementation of TradeOS uses a combination of modern web technologies, AI frameworks, 
+and distributed ledger components to support agent -based automation and secure trade execution.  
+ 
+Component  Technology  / Tools  Purpose  / Description  
+ 
+Backend   
+Python  3.10+  Core  language  for business  logic and autonomous 
+agents  
+ 
+FastAPI  High-performance  backend  framework  for REST 
+APIs 
+ 
+Uvicorn  / Gunicorn  ASGI  servers  for running  and deploying  FastAPI 
+applications  
+ 
+Agent  Framework   
+LangChain  / Autogen  Supports  autonomous  agent  workflows,  reasoning, 
+tool-calling, and inter -agent communication  
+ 
+AI & NLP  
+HuggingFace  Transformers  HS Code  classification  and document 
+understanding  
+ 
+Tesseract  OCR  Extracts  text from invoices  and packing  lists 
+ 
+NumPy,  Pandas,  Scikit -learn  Data  preprocessing,  feature  engineering,  and 
+statistical modelling  
+ 
+Custom  Stochastic  Models   
+Risk estimation  and predictive  analytics  
+ 
+Frontend   
+React.js  User  interface  for marketplace,  dashboards,  and 
+trade tracking  
+Axios  Used  for frontend–backend  API communication  
+ 
+Trust  Layer  / 
+Blockchain   
+Solidity  (Smart  Contracts)  Used  by EscrowAgent  for secure,  milestone -based 
+payments  
+ 
+Web3.py  Connects  backend  services  to the blockchain 
+network  
+ 
+Database   
+PostgreSQL  Persistent  relational  storage  for users,  trades, 
+documents, and logs  
+ 
+SQL Alchemy  ORM  Object -Relational  Mapping  between  Python 
+models and database tables  
+ 
+Deployment   
+Docker  Containerization  for consistent  and portable 
+deployments  
+ 
+Cloud -Ready  Design  Supports  deployment  on AWS,  Azure,  or GCP 
+infrastructure  
+
+--- PAGE 31 ---
+24  Chapter  7: Implementation  
+ 
+7.1 Agent  Implementations  
+ 
+Agent  Functions  Key Logic  
+ 
+ 
+ 
+MatchmakerAgent  Identifies  compatible  buyers/sellers  Vector -based  matching  
+Uses  similarity  scoring,  product 
+matching, and demand –supply 
+metrics  Filter  constraints  (location,  product 
+category, certifications)  
+Returns  top-ranked  trade  partners   
+ 
+ 
+ 
+ 
+DocuAgent  Extracts  text from invoices  and 
+packing lists using OCR  BERT/NMT -based  classification  
+Performs  HS Code  classification 
+using Transformer -NLP models   
+Template -based  document  synthesis  
+Generates  customs  documentation 
+(BL, COO, Invoice Draft)   
+ 
+ 
+ 
+ 
+RiskAgent  Collects  external  data (weather,  port 
+delays, currency volatility)   
+Monte  Carlo  simulation  
+Computes  risk scores  using 
+stochastic modelling  Weighted  risk scoring  function  
+Supplies  dynamic  risk constraints  to 
+LogisticsAgent   
+ 
+ 
+ 
+LogisticsAgent  Integrates  with shipping  carrier  APIs Graph -based  routing  algorithms 
+(Dijkstra/A*)  
+Computes  optimal  routes  based  on 
+risk, cost, and delivery time   
+Risk-adjusted  route  scoring  
+Provides  a logistics  plan and 
+estimated timelines   
+ 
+ 
+ 
+ 
+EscrowAgent  Deploys  smart  contracts  for secure 
+payment holding  Solidity -based  smart  contract 
+conditions  
+Releases  funds  only when  delivery 
+confirmation is received   
+Blockchain  event  listening  
+Maintains  immutable  transaction 
+records on blockchain   
+
+--- PAGE 32 ---
+25  7.2 Frontend  / Backend  Integration  
+A seamless  integration  strategy  ensures  real-time updates  and dynamic  workflow execution:  
+ 
+7.2.1 React  frontend communicates  with the FastAPI  backend  via REST APIs  
+7.2.2 Agent  status updates are pushed to  the UI using  WebSockets  
+7.2.3 Backend  triggers  agent  workflows  asynchronously  
+7.2.4 Smart contract state updates are  reflected on UI  dashboards via  Web3.py  listeners  
+ 
+Data Flow:  
+User  → React UI  → FastAPI  → Agents  → Database  → Blockchain → UI  updates  
+ 
+7.3 Deployment  Environment  
+Local  Environment  
+ 
+7.3.1 Dockerized  containers  for backend,  database,  and agents  
+7.3.2 Local  blockchain  test network  (Ganache/Hardhat)  for EscrowAgent  testing  
+ 
+Cloud -ready  Architecture  
+ 
+The system  is designed  for deployment  on cloud  platforms  such as: 
+ 
+7.3.3 AWS  (EC2 + RDS +  ECR)  
+7.3.4 Azure  (VM  + Azure  SQL)  
+ 
+7.4 Project  Execution  and Management  Plan  
+Software Methodology:  Agile  Scrum  
+ 
+The development of TradeOS follows an Agile Scrum methodology over four sprints (12 
+weeks). This ensures iterative development, continuous feedback, and incremental delivery of 
+working software components.  
+ 
+Key characteristics of Scrum  applied in this project:  
+ 
+7.4.1 Time -boxed  sprints  of two weeks  each 
+7.4.2 Daily  stand -up meetings  to track  progress  and remove blockers  
+7.4.3 Incremental  delivery of functional  modules  at the end of each sprint  
+7.4.4 Sprint  reviews  and retrospectives to refine  system  requirements  and technical  strategy  
+7.4.5 Backlog  grooming  to prioritize  features  based  on feasibility  and dependency  
+
+--- PAGE 33 ---
+26  Sprint  Plan  Overview  
+ 
+Sprint  Goal / Theme  Key Deliverables  Technical  Focus  
+S1: Foundation  & 
+Verification  Build  marketplace  UI and 
+onboarding workflow  Basic  UI, backend  setup, 
+verification module  Infrastructure  setup, 
+data handling  
+S2: Core 
+Automation  Logic  Implement  partner  discovery 
+and documentation 
+automation  MatchmakerAgent,  initial 
+DocuAgent (HS Code 
+classification)  NLP models, 
+matching  algorithms  
+S3: Intelligence  & 
+Risk Mitigation  Introduce  intelligent  decision - 
+making agents  RiskAgent,  integrated 
+LogisticsAgent  Stochastic 
+modelling,  logistics 
+API 
+S4: Final 
+Automation  & 
+Deployment  Deploy full system and 
+automate  end-to-end trade 
+execution  EscrowAgent,  complete  trade 
+simulation  Smart contracts, 
+system  integration  
+This methodology  ensures  modular  development,  enabling  each agent  to be designed,  validated,  and 
+integrated independently.  
+ 
+ 
+7.5 Risk  Assessment  and Mitigation  
+ 
+Risk 
+Category  Key Risk Mitigation  Strategy  
+Technical 
+Risk HS Code  classification  may not 
+achieve required accuracy  Use robust  open -source  Transformer  models;  adjust  model 
+size for optimal inference speed; implement fallback rule - 
+based classification  
+Integration 
+Risk Difficulty integrating 
+LogisticsAgent  with external  APIs 
+or blockchain  Build  API mocks  in Sprint  1; follow  standard  REST 
+structures; isolate DLT calls in service modules  
+Timeline 
+Risk Delays  in complex  agent  logic 
+(M3/M4)  M1 ensures daily monitoring; pair -programming on 
+complex  modules;  strict  adherence  to sprint  commitments  
+
+--- PAGE 34 ---
+27  Chapter  8: Result And Analysis  
+To empirically validate the effectiveness of the TradeOS multi -agent automation framework, a 
+structured, evidence -based evaluation methodology was followed. The goal of this validation is to 
+demonstrate that the coordinated agentic workflow of TradeOS provides measurable improvements 
+over conventional manual or rule -based trade processes. All tests were executed under controlled, 
+repeatable conditions to ensure scientific reliability.  
+ 
+8.1 Baseline  for Comparison:  The “Manual  Workflow  Model”  
+ 
+To establish  a meaningful  benchmark,  a baseline Manual  Workflow  Model  was defined.  This 
+model represents the traditional SME trade process, characterised by:  
+ 
+8.1.1 Manual  partner  identification  
+8.1.2 Manual  document  checking  and HS classification  
+8.1.3 No predictive  risk modelling  
+8.1.4 Static  logistics routing  based solely  on least cost 
+8.1.5 Manual  bank  transfers  without  contract -backed  safeguards  
+ 
+This baseline captures the existing industry challenges and serves as the control model against  
+which TradeOS is evaluated. Comparing TradeOS to this baseline enables quantifiable proof of 
+automation, speed, and accuracy improvements introduced by the agentic architecture.  
+ 
+8.2 Trade  Simulation  Environment  
+A controlled  simulation  environment  was created  to enable  repeatable  and realistic  validation  of the 
+system.  
+A. Trade Route Scenario : A standardized Bengaluru → Hamburg route was used, incorporating 
+multiple   shipping   paths,   weather   variability,   port  delays,   and  customs   requirements.  
+B. Document Dataset : Synthetic, industry -formatted invoices and packing lists were prepared to 
+test   OCR    accuracy,    HS   Code    classification,    and   document    generation.  
+C. Logistics & Risk Data Simulator : A Python simulator produced dynamic inputs such as 
+weather changes, port congestion levels, and currency volatility, enabling controlled testing of the 
+RiskAgent and LogisticsAgent.  
+
+--- PAGE 35 ---
+28  8.3 Key Performance  Indicators  (KPIs)  
+The effectiveness  is validated  by comparing  system  outputs  against  the baseline  model  using  the 
+following KPIs:  
+ 
+KPI Description  Expected  Outcome  
+1. Documentation 
+Processing  Accuracy  Measures correctness of HS Code 
+classification  and extraction  of invoice 
+fields.  Significant  improvement 
+compared to manual 
+interpretation.  
+2. Trade  Execution 
+Time  Total  time from  partner  discovery  to final 
+settlement.  Reduced  workflow  duration  due 
+to parallel multi -agent 
+execution.  
+3. Route  Optimization 
+Efficiency  Evaluates  difference  between  system - 
+selected route and optimal cost –risk- 
+balanced route.  Lower  risk-adjusted  delivery 
+time.  
+4. Risk  Prediction 
+Consistency  Assesses  stability  of stochastic  risk 
+scores  across  repeated  simulations.  Low variance  indicating  robust 
+modelling.  
+5. Settlement  Security 
+& Transparency  Validates  correctness  and immutability 
+of smart  contracts  and milestone -based 
+fund release.  Secure,  tamper -proof,  and 
+automated settlement.  
+8.4 Outcome  Interpretation  
+Validation  success  is achieved  if TradeOS  consistently  demonstrates:  
+ 
+8.4.1 Higher  documentation  accuracy than the manual  baseline  
+8.4.2 Reduced  trade  execution  time  through  parallel  agent coordination  
+8.4.3 More  resilient  route  decisions through  risk-aware  optimisation  
+8.4.4 Secure,  tamper -proof  payments  via blockchain  escrow  
+8.4.5 Improved  transparency and  traceability  across  all trade  events  
+ 
+These  results  collectively  confirm  the value  of adopting  a coordinated  multi -agent  system  for SME 
+cross -border trade automation.  
+
+--- PAGE 36 ---
+29  Chapter  8: Conclusion  
+ 
+The proposed TradeOS platform demonstrates the effective integration of multiple autonomous AI agents 
+to streamline and optimize the end -to-end international trade process. By leveraging structured trade 
+datasets such as UN Comtrade  along with real -time data sources like OpenWeather  and ExchangeRate -
+API, the system transitions from static decision -making to a dynamic, data -driven framework.  
+ 
+The architecture combines specialized agents —Matchmaker, Negotiation, Risk Assessment, Document 
+Generation, and Logistics —each responsible for a critical stage in the trade lifecycle. This modular 
+approach ensures scalability, flexibility, and robustness while maintaining transparency in decision -
+making. The Risk Agent enhances reliability by incorporating multi -dimensional risk factors, while the 
+Logistics Agent optimizes transportation planning through intelligent route and mode selection using 
+platforms such as OpenStreetMap . 
+ 
+Furthermore, the system successfully reduces manual intervention by automating complex processes such 
+as supplier selection, price negotiation, compliance documentation, and shipment planning. Although 
+certain elements rely on synthetic or semi -realistic datasets due to limitations in accessing real -world 
+proprietary trade data, the overall framework closely simulates real -world trade operations and provides a 
+strong foundation for future deployment.  
+ 
+In conclusion, TradeOS represents a significant step toward intelligent, autonomous trade ecosystems, 
+offering improved efficiency, reduced risk, and enhanced decision support. Future enhancements may 
+include deeper integration of real -time APIs, machine learning –based predictive models, and direct 
+connectivity with financial and logistics service providers to further increase system accuracy and real -
+world applicability.  
+
+--- PAGE 37 ---
+30  APPENDIX  – Publication  Details  
+ 
+ 
+References  
+1. Arvitrida, N. I., et al. (2020). "A review of agent -based modeling approach in the supply 
+chain collaboration context." IOP Conference Series: Materials Science and Engineering , 
+Vol. 847, No. 1.  
+2. de Oliveira, D. C. D., et al. (2021). "Neural Machine Translation for Harmonized System 
+Codes prediction." Proceedings of the 30th ACM International Conference on Information 
+& Knowledge Management , pp. 3671 –3675.  
+3. Souza, L. G. D. P. e, et al. (2021). "Will bots take  over the supply  chain? Revisiting  Agent - 
+based supply chain automation." arXiv preprint arXiv:2109.01703 . 
+4. Saberi, S., et al. (2019). "When Blockchain Meets Supply Chain: A Systematic Literature 
+Review on Current Development and Potential Applications." IEEE Access , Vol. 7, pp. 
+88941 –88959.  
+5. World Trade Organization. (2016). World Trade Report 2016: Levelling the trading field 
+for SMEs . Geneva: WTO Publications.  
+6. World Trade Organization. (2023). World Trade Report 2023: Re -globalization for a 
+secure, inclusive and sustainable future . Geneva: WTO Publications.  
+7. Zhang,  S., et al. (2021).  "Multi -Behavior  Agent  Model  for Supply  Chain  Management."  
+IEEE  Access , Vol. 9,  pp. 31730 –31742.  
+
