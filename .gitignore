@@ -30,3 +30,17 @@ Thumbs.db
 backend/app/generated_docs/
 backend/escrow_ledger.db
 *.db
+
+
+backend\MATCHMAKER_INTEGRATION_STATUS.md
+backend\MATCHMAKER_README.md
+backend\remove_emojis.py
+backend/verify_matchmaker_csv_integration.py
+backend/verify_autonomous_matchmaker.py
+backend/verify_document_agent_phase1.py
+backend/verify_document_agent_phase2.py
+backend/verify_matchmaker_csv_integration.py
+backend/list_models.py
+backend/inspect_db.py
+backend/get_unique_products.py
+backend/generate_synthetic_data.py

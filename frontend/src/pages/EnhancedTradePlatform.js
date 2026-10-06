@@ -90,8 +90,8 @@ const EnhancedTradePlatform = () => {
 
   // Live Dashboard Feed State
   const [liveRFQs, setLiveRFQs] = useState([
-    { item: '500 Tons Turmeric', loc: 'Germany', type: 'IMPORT', time: 'Just now', match: '92%' },
-    { item: 'Aluminum Ignots', loc: 'UAE', type: 'IMPORT', time: '2m ago', match: '85%' },
+    { item: 'Turmeric Powder', loc: 'Germany', type: 'IMPORT', time: 'Just now', match: '92%' },
+    { item: 'Aluminum Ingots', loc: 'UAE', type: 'IMPORT', time: '2m ago', match: '85%' },
     { item: 'Semiconductors', loc: 'India', type: 'IMPORT', time: '5m ago', match: '78%' }
   ]);
   const [intelligenceLogs, setIntelligenceLogs] = useState([
@@ -359,40 +359,59 @@ const EnhancedTradePlatform = () => {
     }
   };
 
-  // Run Autonomous Negotiation Agent
+  // Importer: Initialize Deal Room Negotiation
   const runNegotiationAgent = async (supplier) => {
     setLoading(true);
-    setActiveTab('negotiator');
     
-    // Create payload
-    const payload = {
-      product_name: parsedItem?.product_name || supplier.company_name,
-      quantity: parsedItem?.quantity || 1000,
-      price: parsedItem?.price ? parsedItem.price * 1.15 : 1250.00, // Mock initial supplier quote (15% markup over hypothetical assumed base in INR)
-      supplier_id: supplier.supplier_id,
-      delivery_terms: 'FOB'
-    };
-
+    const qty = parsedItem?.quantity || 1000;
+    const productName = parsedItem?.product_name || supplier.company_name;
+    
     try {
-      const response = await fetch('http://localhost:8000/api/intelligence/negotiate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await response.json();
+      // 1. Fetch live market price
+      const marketRes = await fetch(`http://localhost:8000/api/intelligence/market-price?product_name=${encodeURIComponent(productName)}`);
+      const marketData = await marketRes.json();
+      const livePrice = marketData.market_price || 300.0;
       
-      if (response.ok) {
-        setNegotiationResult({...data, supplier});
-      } else {
-        alert('Negotiation failed: ' + (data.detail || 'Unknown error'));
-        setActiveTab('matchmaker');
+      const supplierPrice = Number((livePrice * 1.05).toFixed(2));
+      const suggestionPrice = Number((livePrice * 0.98).toFixed(2));
+
+      const initialMessage = {
+        sender: 'Supplier', 
+        type: 'offer', 
+        price: supplierPrice, 
+        text: `We can supply ${qty} units of ${productName} at ₹${supplierPrice}/unit. High quality guaranteed.`,
+        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+      };
+      
+      const intelligence = {
+        marketAvg: livePrice,
+        risk: 'Medium',
+        confidence: 60, 
+        suggestion: suggestionPrice
+      };
+      
+      const res = await fetch('http://localhost:8000/api/deal-room/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+           room_id: `room_${Date.now()}`,
+           buyer: supplier, // Reusing backend schema
+           initial_message: initialMessage,
+           intelligence: intelligence
+        })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        setExporterDealRoom({
+          ...data.room,
+          opponent: supplier,
+          currentOfferPrice: '',
+          active: true
+        });
+        setActiveTab('importer-negotiator');
       }
-    } catch (error) {
-      alert('Error running Negotiation Agent: ' + error.message);
-      setActiveTab('matchmaker');
+    } catch(e) {
+      alert('Failed to initialize live deal room.');
     } finally {
       setLoading(false);
     }
@@ -476,24 +495,33 @@ const EnhancedTradePlatform = () => {
 
   // Exporter: Initialize Deal Room Negotiation
   const runExporterPitch = async (buyer) => {
+    setLoading(true);
     const qty = Math.min(parseFloat(smartCatalogItem?.quantity || 1), parseFloat(buyer.target_quantity || 1));
     
-    const initialMessage = {
-      sender: 'Buyer', 
-      type: 'offer', 
-      price: 4.00, 
-      text: `We are looking to secure ${qty} tons of ${buyer.product_name || 'Commodity'} at $4.00/kg. Delivery within 20 days.`,
-      time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-    };
-    
-    const intelligence = {
-      marketAvg: 4.28,
-      risk: 'Low',
-      confidence: 65, 
-      suggestion: 4.35
-    };
-    
     try {
+      // 1. Fetch live market price
+      const marketRes = await fetch(`http://localhost:8000/api/intelligence/market-price?product_name=${encodeURIComponent(buyer.product_name)}`);
+      const marketData = await marketRes.json();
+      const livePrice = marketData.market_price || 300.0;
+      
+      const buyerPrice = Number((livePrice * 0.95).toFixed(2));
+      const suggestionPrice = Number((livePrice * 1.02).toFixed(2));
+
+      const initialMessage = {
+        sender: 'Buyer', 
+        type: 'offer', 
+        price: buyerPrice, 
+        text: `We are looking to secure ${qty} tons of ${buyer.product_name || 'Commodity'} at ₹${buyerPrice}/kg. Delivery within 20 days.`,
+        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+      };
+      
+      const intelligence = {
+        marketAvg: livePrice,
+        risk: 'Low',
+        confidence: 65, 
+        suggestion: suggestionPrice
+      };
+      
       const res = await fetch('http://localhost:8000/api/deal-room/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -515,6 +543,8 @@ const EnhancedTradePlatform = () => {
       }
     } catch(e) {
       alert('Failed to initialize live deal room.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -825,7 +855,7 @@ const EnhancedTradePlatform = () => {
   const getProductImage = (productName) => {
     const name = (productName || '').toLowerCase();
     // Agriculture & Raw Materials
-    if (name.includes('turmeric')) return '/products/turmeric.png';
+    if (name.includes('turmeric') || name.includes('cardamom') || name.includes('cinnamon') || name.includes('clove') || name.includes('cumin') || name.includes('coriander') || name.includes('nutmeg') || name.includes('spice')) return '/products/turmeric.png';
     if (name.includes('coffee') || name.includes('palm oil') || name.includes('oil') || name.includes('quinoa') || name.includes('rice') || name.includes('sugar') || name.includes('fertilizer') || name.includes('cotton') || name.includes('urea') || name.includes('pepper')) return '/products/coffee.png';
     
     // Medical
@@ -886,7 +916,9 @@ const EnhancedTradePlatform = () => {
               { id: 'buyer-discovery', icon: <Search className="w-4 h-4" />, label: 'RFQ Market Feed' },
               { id: 'credit-risk', icon: <ShieldAlert className="w-4 h-4" />, label: 'Risk Intelligence' },
               { id: 'outbound-quote', icon: <Send className="w-4 h-4" />, label: 'Outbound Quotes' },
-              { id: 'doc-generation', icon: <FileText className="w-4 h-4" />, label: 'Document Center' }
+              { id: 'doc-generation', icon: <FileText className="w-4 h-4" />, label: 'Document Center' },
+              { id: 'quality-escrow', icon: <ShieldCheck className="w-4 h-4" />, label: 'Smart Escrow' },
+              { id: 'logistics-agent', icon: <Ship className="w-4 h-4" />, label: 'Live Logistics' }
             ] : [
               { id: 'overview', icon: <TrendingUp className="w-4 h-4" />, label: 'Dashboard' },
               { id: 'parser', icon: <Package className="w-4 h-4" />, label: 'AI Marketplace' },
@@ -1579,135 +1611,7 @@ const EnhancedTradePlatform = () => {
       )}
 
       {/* Negotiation Agent Tab */}
-      {activeTab === 'negotiator' && (
-        <div className="bg-white/90 shadow-md backdrop-blur border border-slate-200 p-8 rounded-3xl animate-slide-up relative overflow-hidden shadow-xl">
-          <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
-          
-          <h2 className="text-2xl font-black text-slate-100 mb-6 flex items-center gap-3 relative z-10">
-            <div className="p-2 bg-orange-500/20 rounded-lg text-orange-400 border border-orange-500/30">
-              <TrendingUp className="w-6 h-6" />
-            </div>
-            Autonomous Negotiation & Market Intelligence
-          </h2>
-          
-          {loading ? (
-            <div className="text-center py-16 relative z-10">
-              <div className="inline-block p-4 bg-orange-500/10 border border-orange-500/20 rounded-full mb-6">
-                <RefreshCw className="w-10 h-10 text-orange-500 animate-spin" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">Agents are working...</h3>
-              <p className="text-slate-600 max-w-md mx-auto">
-                Fetching live commodity futures prices from Yahoo Finance...<br/>
-                Computing fair target price...<br/>
-                Initiating counter-offers with supplier...
-              </p>
-            </div>
-          ) : !negotiationResult ? (
-            <div className="text-center py-12 relative z-10">
-              <div className="inline-block p-4 bg-slate-100 rounded-full mb-4 text-slate-500">
-                <Search className="w-8 h-8" />
-              </div>
-              <p className="text-slate-600 mb-6 font-medium">
-                Please select a supplier from the Matchmaker Agent tab to initiate autonomous negotiation.
-              </p>
-              <button
-                onClick={() => setActiveTab('matchmaker')}
-                className="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/50 text-emerald-400 font-bold px-6 py-2 rounded-xl transition-colors shadow-lg shadow-emerald-500/10"
-              >
-                Go to Matchmaker
-              </button>
-            </div>
-          ) : (
-            <div className="relative z-10">
-              {/* Market Intelligence Panel */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <div className="bg-white shadow-sm border border-slate-200 p-6 rounded-2xl border-l-4 border-l-amber-500 border-y border-r border-slate-200 shadow-sm">
-                  <h4 className="text-amber-500 font-bold mb-4 flex items-center gap-2">
-                    <BarChart3 className="w-5 h-5" /> Live Market Intelligence
-                  </h4>
-                  <div className="space-y-3 text-sm text-slate-800">
-                    <div className="flex justify-between border-b border-slate-200 pb-2">
-                      <span className="text-slate-500">Commodity:</span> 
-                      <strong className="text-slate-900">{negotiationResult.market_intelligence.product}</strong>
-                    </div>
-                    <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                      <span className="text-slate-500">Fair Market Value:</span> 
-                      <div className="text-right">
-                        <span className="text-2xl font-black text-emerald-400">₹{negotiationResult.market_intelligence.market_price}</span>
-                        <span className="text-xs text-slate-500 ml-1">/ {negotiationResult.market_intelligence.unit}</span>
-                      </div>
-                    </div>
-                    <div className="flex justify-between border-b border-slate-200 pb-2">
-                      <span className="text-slate-500">Trend:</span> 
-                      <strong className={`flex items-center gap-1 ${
-                        negotiationResult.market_intelligence.market_trend === 'RISING' ? 'text-rose-500' : 
-                        negotiationResult.market_intelligence.market_trend === 'FALLING' ? 'text-emerald-500' : 'text-slate-600'
-                      }`}>
-                        {negotiationResult.market_intelligence.market_trend === 'RISING' ? 'RISING 📈' : 
-                         negotiationResult.market_intelligence.market_trend === 'FALLING' ? 'FALLING 📉' : 'STABLE ➡️'}
-                      </strong>
-                    </div>
-                  </div>
-                  <div className="mt-4 text-xs text-amber-500/70 italic flex justify-between">
-                    <span>Source: {negotiationResult.market_intelligence.data_source}</span>
-                    <span>Updated: {new Date(negotiationResult.market_intelligence.timestamp).toLocaleTimeString()}</span>
-                  </div>
-                </div>
 
-                {/* Negotiation Result Panel */}
-                <div className="bg-white shadow-sm border border-slate-200 p-6 rounded-2xl border-l-4 border-l-emerald-500 border-y border-r border-slate-200 shadow-sm">
-                  <h4 className="text-emerald-500 font-bold mb-4 flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5" /> Negotiation Outcome
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="bg-white p-4 rounded-xl border border-slate-200">
-                      <p className="text-xs text-slate-500 uppercase tracking-wide font-semibold mb-1">Initial Quote</p>
-                      <h3 className="text-xl font-bold text-rose-500/70 line-through decoration-rose-500/50">₹{negotiationResult.supplier_initial_quote}</h3>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl border border-emerald-500/30 shadow-sm transform scale-105">
-                      <p className="text-xs text-emerald-400 uppercase tracking-wide font-bold mb-1">AI Agreed Price</p>
-                      <h3 className="text-2xl font-black text-emerald-400">₹{negotiationResult.final_agreed_price}</h3>
-                    </div>
-                  </div>
-                  <div className="mt-4 p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl flex justify-between items-center">
-                    <span className="font-bold">Total AI Savings:</span>
-                    <span className="text-2xl font-black">₹{negotiationResult.total_savings.toLocaleString()}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Negotiation Log Console */}
-              <div className="bg-white shadow-sm border border-slate-200 rounded-2xl p-6 shadow-xl mb-8 font-mono text-sm border border-slate-200 overflow-hidden relative">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 via-emerald-500 to-blue-500"></div>
-                <h5 className="text-orange-400 font-bold mb-4 flex items-center gap-2 pb-3 border-b border-slate-200">
-                  <MessageSquare className="w-4 h-4" /> Autonomous Negotiation Thread
-                </h5>
-                <div className="space-y-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
-                  {negotiationResult.negotiation_log.map((log, i) => (
-                    <div key={i} className={`
-                      p-3 rounded-lg border-l-4 transition-colors
-                      ${log.includes('(AI)') ? 'bg-blue-500/10 border-blue-500 text-blue-300' : 
-                        log.includes('(Supplier)') ? 'bg-rose-500/10 border-rose-500 text-rose-300' : 
-                        'bg-white border-slate-200 text-slate-600'}
-                    `}>
-                      {log}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="text-center">
-                <button
-                  onClick={() => runDocumentAgent(negotiationResult.supplier)}
-                  className="bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/50 text-violet-400 hover:text-violet-300 px-8 py-4 rounded-xl font-bold text-lg shadow-[0_0_15px_rgba(139,92,246,0.2)] hover:shadow-[0_0_25px_rgba(139,92,246,0.4)] hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-3 mx-auto"
-                >
-                  <Lock className="w-5 h-5" /> Lock in ₹{negotiationResult.final_agreed_price} & Proceed to Document Agent
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Document Agent Tab */}
       {activeTab === 'document-agent' && (
@@ -2589,16 +2493,16 @@ const EnhancedTradePlatform = () => {
                <div className="bg-slate-50 border-b border-slate-200 p-4 flex justify-between items-center z-10 shadow-sm">
                  <div className="flex items-center gap-3">
                    <div className="w-10 h-10 bg-indigo-100 text-indigo-700 font-bold rounded-lg flex items-center justify-center border border-indigo-200">
-                     {exporterDealRoom.buyer.country.charAt(0)}
+                     {exporterDealRoom.opponent?.country?.charAt(0) || exporterDealRoom.buyer?.country?.charAt(0) || 'U'}
                    </div>
                    <div>
-                     <div className="font-bold text-slate-900">{exporterDealRoom.buyer.company_name}</div>
-                     <div className="text-xs text-slate-500 font-mono">BUYER • {exporterDealRoom.buyer.country}</div>
+                     <div className="font-bold text-slate-900">{exporterDealRoom.opponent?.company_name || exporterDealRoom.buyer?.company_name}</div>
+                     <div className="text-xs text-slate-500 font-mono">{user?.user_type === 'exporter' ? 'BUYER' : 'SUPPLIER'} • {exporterDealRoom.opponent?.country || exporterDealRoom.buyer?.country || 'Global'}</div>
                    </div>
                  </div>
                  <div className="text-right">
-                   <div className="font-bold text-slate-900">{user?.company_name || 'AgriTech Exports'}</div>
-                   <div className="text-xs text-slate-500 font-mono">YOU (EXPORTER) • {user?.country || 'India'}</div>
+                   <div className="font-bold text-slate-900">{user?.company_name || (user?.user_type === 'exporter' ? 'AgriTech Exports' : 'Global Trade Corp')}</div>
+                   <div className="text-xs text-slate-500 font-mono">YOU ({user?.user_type === 'exporter' ? 'EXPORTER' : 'IMPORTER'}) • {user?.country || 'India'}</div>
                  </div>
                </div>
 
@@ -2615,7 +2519,7 @@ const EnhancedTradePlatform = () => {
                        <div className="font-medium text-[15px]">{msg.text}</div>
                        {msg.price && (
                          <div className={`mt-2 font-black text-lg ${msg.sender === (user?.user_type === 'exporter' ? 'Exporter' : 'Buyer') ? 'text-blue-600' : 'text-slate-900'}`}>
-                           Offer: ${msg.price.toFixed(2)}/kg
+                           Offer: ₹{msg.price.toFixed(2)}/kg
                          </div>
                        )}
                      </div>
@@ -2625,7 +2529,7 @@ const EnhancedTradePlatform = () => {
                  {exporterDealRoom.status === 'AGREED' && (
                    <div className="w-full flex justify-center py-4">
                      <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 px-6 py-3 rounded-full font-bold flex items-center gap-2 shadow-sm animate-fade-in">
-                       <CheckCircle2 className="w-5 h-5 text-emerald-500" /> AGREEMENT REACHED AT ${exporterDealRoom.agreedPrice?.toFixed(2)}/KG
+                       <CheckCircle2 className="w-5 h-5 text-emerald-500" /> AGREEMENT REACHED AT ₹{exporterDealRoom.agreedPrice?.toFixed(2)}/KG
                      </div>
                    </div>
                  )}
@@ -2634,33 +2538,66 @@ const EnhancedTradePlatform = () => {
                {/* Exporter Input Area */}
                <div className="p-4 bg-white border-t border-slate-200 z-10">
                  {exporterDealRoom.status === 'AGREED' ? (
-                   <button
-                     onClick={() => {
-                        setNegotiationResult({
-                           buyer: exporterDealRoom.buyer,
-                           final_agreed_price: exporterDealRoom.agreedPrice,
-                           proposal: {
-                             quantity: Math.min(parseFloat(smartCatalogItem?.quantity || 1), parseFloat(exporterDealRoom.buyer.target_quantity || 1)),
-                             unit: 'tons',
-                             product_name: exporterDealRoom.buyer.product_name,
-                             currency: 'USD',
-                             quantity_kg: 5000,
-                             price_per_kg: exporterDealRoom.agreedPrice,
-                             base_price_fob: 5000 * exporterDealRoom.agreedPrice,
-                             freight_insurance: 1250,
-                             total_cif_quote: (5000 * exporterDealRoom.agreedPrice) + 1250
-                           }
-                        });
-                        setActiveTab('outbound-quote');
-                     }}
-                     className="w-full py-4 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/50 text-emerald-500 font-black rounded-xl shadow-lg transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
-                   >
-                     Launch Trade Execution Engine <ArrowRight className="w-5 h-5" />
-                   </button>
+                   user?.user_type === 'exporter' ? (
+                     <button
+                       onClick={async () => {
+                          setLoading(true);
+                          setActiveTab('outbound-quote');
+                          try {
+                             const response = await fetch('http://localhost:8000/api/intelligence/generate-pitch', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                   product_name: exporterDealRoom.buyer?.product_name || 'Commodity',
+                                   quantity: Math.min(parseFloat(smartCatalogItem?.quantity || 1), parseFloat(exporterDealRoom.buyer?.target_quantity || 1)),
+                                   unit: 'tons',
+                                   hs_code: smartCatalogItem?.hs_code || '000000',
+                                   buyer_id: exporterDealRoom.buyer?.buyer_id || 'UNKNOWN',
+                                   buyer_country: exporterDealRoom.buyer?.country || 'Global',
+                                   agreed_price_per_kg: exporterDealRoom.agreedPrice
+                                })
+                             });
+                             const data = await response.json();
+                             if (data.status === 'success') {
+                                setNegotiationResult({
+                                   buyer: exporterDealRoom.buyer,
+                                   final_agreed_price: exporterDealRoom.agreedPrice,
+                                   risk_status: data.risk_status,
+                                   proposal: data.proposal
+                                });
+                             } else {
+                                alert('Failed to generate pitch');
+                                setActiveTab('exporter-negotiator');
+                             }
+                          } catch (err) {
+                             console.error(err);
+                             setActiveTab('exporter-negotiator');
+                          } finally {
+                             setLoading(false);
+                          }
+                       }}
+                       className="w-full py-4 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/50 text-emerald-500 font-black rounded-xl shadow-lg transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                     >
+                       Launch Trade Execution Engine <ArrowRight className="w-5 h-5" />
+                     </button>
+                   ) : (
+                     <button
+                       onClick={() => {
+                          setNegotiationResult({
+                             supplier: exporterDealRoom.opponent || exporterDealRoom.buyer,
+                             final_agreed_price: exporterDealRoom.agreedPrice
+                          });
+                          runDocumentAgent(exporterDealRoom.opponent || exporterDealRoom.buyer);
+                       }}
+                       className="w-full py-4 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/50 text-violet-500 font-black rounded-xl shadow-lg transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                     >
+                       Lock in Price & Proceed to Document Validation <ArrowRight className="w-5 h-5" />
+                     </button>
+                   )
                  ) : (
                    <div className="flex gap-3">
                      <div className="relative flex-1">
-                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none font-bold text-slate-400">$</div>
+                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none font-bold text-slate-400">₹</div>
                        <input 
                          type="number"
                          value={exporterDealRoom.currentOfferPrice}
@@ -2721,7 +2658,7 @@ const EnhancedTradePlatform = () => {
                  <div className="space-y-4">
                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
                      <div className="text-xs font-bold text-slate-500 mb-1 flex items-center gap-1"><BarChart3 className="w-3 h-3 text-blue-500" /> MarketAgent</div>
-                     <div className="text-sm font-medium text-slate-800">Global Avg Price: <strong className="text-blue-600">${exporterDealRoom.intelligence.marketAvg}/kg</strong></div>
+                     <div className="text-sm font-medium text-slate-800">Global Avg Price: <strong className="text-blue-600">₹{exporterDealRoom.intelligence.marketAvg}/kg</strong></div>
                    </div>
                    
                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
@@ -2736,7 +2673,7 @@ const EnhancedTradePlatform = () => {
 
                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 border-l-2 border-l-amber-500">
                      <div className="text-xs font-bold text-slate-500 mb-1 flex items-center gap-1"><TrendingUp className="w-3 h-3 text-amber-500" /> NegotiationAgent</div>
-                     <div className="text-sm font-medium text-slate-800 mb-1">Suggested Counter: <strong className="text-amber-600">${exporterDealRoom.intelligence.suggestion}/kg</strong></div>
+                     <div className="text-sm font-medium text-slate-800 mb-1">Suggested Counter: <strong className="text-amber-600">₹{exporterDealRoom.intelligence.suggestion}/kg</strong></div>
                      <div className="text-[11px] text-slate-500 italic mt-1 border-t border-slate-200 pt-1">
                        <strong>Insight:</strong> Buyer RFQ indicates delivery within 20 days. Buyer may value speed over minor price discounts.
                      </div>

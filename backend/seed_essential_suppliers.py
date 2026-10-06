@@ -44,8 +44,16 @@ essential_commodities = [
     {"name": "Organic Turmeric", "category": "Agriculture", "hs": 91030},
     {"name": "Robusta Coffee", "category": "Agriculture", "hs": 90111},
     {"name": "Raw Cotton", "category": "Agriculture", "hs": 520100},
+    {"name": "Sunflower Oil", "category": "Agriculture", "hs": 151211},
     # Metals New
-    {"name": "Lithium Ore", "category": "Metals", "hs": 261590}
+    {"name": "Lithium Ore", "category": "Metals", "hs": 261590},
+    {"name": "Gold Bullion", "category": "Metals", "hs": 710812},
+    # High-Demand India Imports
+    {"name": "Crude Petroleum", "category": "Energy", "hs": 270900},
+    {"name": "Semiconductors", "category": "Electronics", "hs": 854231},
+    {"name": "Coking Coal", "category": "Energy", "hs": 270119},
+    {"name": "Heavy Construction Machinery", "category": "Machinery", "hs": 842952},
+    {"name": "Aircraft Parts", "category": "Machinery", "hs": 880330}
 ]
 
 countries = ["India", "Vietnam", "Taiwan", "Germany", "USA", "Brazil", "Chile", "Australia", "Mexico", "China", "Italy"]

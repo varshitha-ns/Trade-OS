@@ -44,6 +44,7 @@ class PitchRequest(BaseModel):
     hs_code: str = "000000"
     buyer_id: str
     buyer_country: str
+    agreed_price_per_kg: float = None
 
 @router.post("/generate-pitch")
 async def generate_cif_pitch(request: PitchRequest):
@@ -56,7 +57,11 @@ async def generate_cif_pitch(request: PitchRequest):
     try:
         # 1. Fetch live commodity value (price is per KG)
         market_intel = market_agent.analyze_market_price(request.product_name)
-        base_price_per_kg = market_intel.get("market_price", 1000.0)
+        
+        if request.agreed_price_per_kg is not None:
+            base_price_per_kg = request.agreed_price_per_kg
+        else:
+            base_price_per_kg = market_intel.get("market_price", 1000.0)
         
         # Convert quantity to KG regardless of unit provided
         unit = (request.unit or "kg").lower().strip()

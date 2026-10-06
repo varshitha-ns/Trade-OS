@@ -67,8 +67,14 @@ class BuyerMatchmakerAgent:
                 if not overlap:
                     explanation.append("Category Level Match")
 
-            # HARD FILTER: If there is zero relevance between products, drop it entirely.
-            if semantic_score == 0:
+            # HARD FILTER: If there is zero direct product relevance, drop it entirely.
+            has_direct_match = bool(
+                overlap or 
+                (exporter_hs and rfq_hs and exporter_hs[:4] == rfq_hs[:4]) or 
+                (exporter_prod and rfq_prod and (exporter_prod in rfq_prod or rfq_prod in exporter_prod))
+            )
+            
+            if not has_direct_match:
                 continue
                 
             score += semantic_score

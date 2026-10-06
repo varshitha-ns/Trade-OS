@@ -231,6 +231,259 @@ mock_rfqs = [
         "quantity": 150,
         "unit": "tons",
         "status": "active"
+    },
+    {
+        "request_id": f"RFQ-{uuid.uuid4().hex[:8]}",
+        "buyer_id": "Spices Global Imports",
+        "destination_country": "UAE",
+        "product_name": "Premium Cardamom Pods",
+        "product_category": "Spices",
+        "hs_code_suggestion": "090832",
+        "quantity": 10,
+        "unit": "tons",
+        "status": "active"
+    },
+    {
+        "request_id": f"RFQ-{uuid.uuid4().hex[:8]}",
+        "buyer_id": "McCormick Spice Co",
+        "destination_country": "USA",
+        "product_name": "Black Pepper",
+        "product_category": "Spices",
+        "hs_code_suggestion": "090411",
+        "quantity": 50,
+        "unit": "tons",
+        "status": "active"
+    },
+    {
+        "request_id": f"RFQ-{uuid.uuid4().hex[:8]}",
+        "buyer_id": "European Flavorings Ltd",
+        "destination_country": "Germany",
+        "product_name": "Cinnamon",
+        "product_category": "Spices",
+        "hs_code_suggestion": "090611",
+        "quantity": 20,
+        "unit": "tons",
+        "status": "active"
+    },
+    {
+        "request_id": f"RFQ-{uuid.uuid4().hex[:8]}",
+        "buyer_id": "Middle East Trading House",
+        "destination_country": "Saudi Arabia",
+        "product_name": "Cloves",
+        "product_category": "Spices",
+        "hs_code_suggestion": "090710",
+        "quantity": 15,
+        "unit": "tons",
+        "status": "active"
+    },
+    {
+        "request_id": f"RFQ-{uuid.uuid4().hex[:8]}",
+        "buyer_id": "Global Culinary Partners",
+        "destination_country": "UK",
+        "product_name": "Cumin",
+        "product_category": "Spices",
+        "hs_code_suggestion": "090931",
+        "quantity": 30,
+        "unit": "tons",
+        "status": "active"
+    },
+    {
+        "request_id": f"RFQ-{uuid.uuid4().hex[:8]}",
+        "buyer_id": "Asian Spice Route",
+        "destination_country": "Japan",
+        "product_name": "Coriander",
+        "product_category": "Spices",
+        "hs_code_suggestion": "090921",
+        "quantity": 25,
+        "unit": "tons",
+        "status": "active"
+    },
+    {
+        "request_id": f"RFQ-{uuid.uuid4().hex[:8]}",
+        "buyer_id": "Nutmeg & Co Imports",
+        "destination_country": "France",
+        "product_name": "Nutmeg",
+        "product_category": "Spices",
+        "hs_code_suggestion": "090811",
+        "quantity": 10,
+        "unit": "tons",
+        "status": "active"
+    },
+    {
+        "request_id": f"RFQ-{uuid.uuid4().hex[:8]}",
+        "buyer_id": "AgriGrow Fertco",
+        "destination_country": "Brazil",
+        "product_name": "Urea Fertilizer",
+        "product_category": "Chemicals",
+        "hs_code_suggestion": "310210",
+        "quantity": 5000,
+        "unit": "tons",
+        "status": "active"
+    },
+    {
+        "request_id": f"RFQ-{uuid.uuid4().hex[:8]}",
+        "buyer_id": "Sweet Life Confections",
+        "destination_country": "Canada",
+        "product_name": "Raw Sugar",
+        "product_category": "Agriculture",
+        "hs_code_suggestion": "170114",
+        "quantity": 1000,
+        "unit": "tons",
+        "status": "active"
+    },
+    {
+        "request_id": f"RFQ-{uuid.uuid4().hex[:8]}",
+        "buyer_id": "TexWeave Industries",
+        "destination_country": "Bangladesh",
+        "product_name": "Raw Cotton",
+        "product_category": "Agriculture",
+        "hs_code_suggestion": "520100",
+        "quantity": 200,
+        "unit": "tons",
+        "status": "active"
+    },
+    {
+        "request_id": f"RFQ-{uuid.uuid4().hex[:8]}",
+        "buyer_id": "West Africa Grains",
+        "destination_country": "Nigeria",
+        "product_name": "Milled Rice",
+        "product_category": "Agriculture",
+        "hs_code_suggestion": "100630",
+        "quantity": 3000,
+        "unit": "tons",
+        "status": "active"
+    },
+    {
+        "request_id": f"RFQ-{uuid.uuid4().hex[:8]}",
+        "buyer_id": "Apple Supply Chain",
+        "destination_country": "USA",
+        "product_name": "OLED Displays",
+        "product_category": "Electronics components",
+        "hs_code_suggestion": "852990",
+        "quantity": 20000,
+        "unit": "units",
+        "status": "active"
+    },
+    {
+        "request_id": f"RFQ-{uuid.uuid4().hex[:8]}",
+        "buyer_id": "GlaxoSmithKline Procurement",
+        "destination_country": "UK",
+        "product_name": "Bulk Paracetamol API",
+        "product_category": "Medical Supplies",
+        "hs_code_suggestion": "292229",
+        "quantity": 100,
+        "unit": "tons",
+        "status": "active"
+    },
+    {
+        "request_id": f"RFQ-{uuid.uuid4().hex[:8]}",
+        "buyer_id": "LafargeHolcim",
+        "destination_country": "France",
+        "product_name": "Portland Cement",
+        "product_category": "Construction",
+        "hs_code_suggestion": "252329",
+        "quantity": 50000,
+        "unit": "tons",
+        "status": "active"
+    },
+    {
+        "request_id": f"RFQ-{uuid.uuid4().hex[:8]}",
+        "buyer_id": "Toyota Motor Corp",
+        "destination_country": "Japan",
+        "product_name": "Automotive Engine Parts",
+        "product_category": "Automotive",
+        "hs_code_suggestion": "870899",
+        "quantity": 5000,
+        "unit": "tons",
+        "status": "active"
+    },
+    {
+        "request_id": f"RFQ-{uuid.uuid4().hex[:8]}",
+        "buyer_id": "ExxonMobil Refining",
+        "destination_country": "USA",
+        "product_name": "Aviation Turbine Fuel",
+        "product_category": "Energy",
+        "hs_code_suggestion": "271019",
+        "quantity": 100000,
+        "unit": "barrels",
+        "status": "active"
+    },
+    {
+        "request_id": f"RFQ-{uuid.uuid4().hex[:8]}",
+        "buyer_id": "Levi Strauss Sourcing",
+        "destination_country": "Mexico",
+        "product_name": "Denim Fabric Rolls",
+        "product_category": "Apparel",
+        "hs_code_suggestion": "520942",
+        "quantity": 500,
+        "unit": "rolls",
+        "status": "active"
+    },
+    {
+        "request_id": f"RFQ-{uuid.uuid4().hex[:8]}",
+        "buyer_id": "DJI Innovations",
+        "destination_country": "China",
+        "product_name": "Commercial Drones",
+        "product_category": "Electronics",
+        "hs_code_suggestion": "880620",
+        "quantity": 1000,
+        "unit": "units",
+        "status": "active"
+    },
+    {
+        "request_id": f"RFQ-{uuid.uuid4().hex[:8]}",
+        "buyer_id": "Siemens Healthineers",
+        "destination_country": "Germany",
+        "product_name": "X-Ray Machine Components",
+        "product_category": "Medical Supplies",
+        "hs_code_suggestion": "902290",
+        "quantity": 50,
+        "unit": "tons",
+        "status": "active"
+    },
+    {
+        "request_id": f"RFQ-{uuid.uuid4().hex[:8]}",
+        "buyer_id": "Dow Chemical Company",
+        "destination_country": "USA",
+        "product_name": "High-Density Polyethylene",
+        "product_category": "Chemicals",
+        "hs_code_suggestion": "390120",
+        "quantity": 10000,
+        "unit": "tons",
+        "status": "active"
+    },
+    {
+        "request_id": f"RFQ-{uuid.uuid4().hex[:8]}",
+        "buyer_id": "Tesla Gigafactory",
+        "destination_country": "Germany",
+        "product_name": "Rare Earth Elements",
+        "product_category": "Metals",
+        "hs_code_suggestion": "280530",
+        "quantity": 20,
+        "unit": "tons",
+        "status": "active"
+    },
+    {
+        "request_id": f"RFQ-{uuid.uuid4().hex[:8]}",
+        "buyer_id": "Mayo Clinic Supply Chain",
+        "destination_country": "USA",
+        "product_name": "Surgical Masks N95",
+        "product_category": "Medical Supplies",
+        "hs_code_suggestion": "630790",
+        "quantity": 1000000,
+        "unit": "units",
+        "status": "active"
+    },
+    {
+        "request_id": f"RFQ-{uuid.uuid4().hex[:8]}",
+        "buyer_id": "TSMC Fabrication",
+        "destination_country": "Taiwan",
+        "product_name": "Semiconductor Chips",
+        "product_category": "Electronics",
+        "hs_code_suggestion": "854231",
+        "quantity": 50000,
+        "unit": "units",
+        "status": "active"
     }
 ]
 
@@ -248,7 +501,7 @@ async def seed_db():
     print(f"Inserting {len(mock_rfqs)} Global Buyer RFQs into trade_requests collection...")
     await db.trade_requests.insert_many(mock_rfqs)
     
-    print("✅ Database seeding complete!")
+    print("Database seeding complete!")
 
 if __name__ == "__main__":
     asyncio.run(seed_db())

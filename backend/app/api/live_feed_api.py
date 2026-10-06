@@ -8,16 +8,17 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 router = APIRouter()
 
-COMMODITIES = [
-    "Copper Cathodes", "Organic Turmeric", "Aluminum Ignots", "Semiconductors", "Robusta Coffee", "Urea Fertilizer", "Raw Cotton", "Lithium Ore",
-    "Animal Leather Bags", "Vegan Plant Leather Bags", "Organic Hemp Fabric", "Industrial Nylon Yarn",
-    "Monocrystalline Solar Panels", "Wind Turbine Blades", "Lithium-Ion Batteries", "Steel Pipes", "Copper Wire",
-    "Surgical Masks", "Amoxicillin Antibiotics", "Aspirin Bulk Powder", "Nitrile Gloves",
-    "Organic Quinoa", "Essential Lavender Oil", "Bulk Palm Oil", "Milled Rice", "Raw Sugar",
-    "Automotive Ball Bearings", "Electric Motors", "Hydraulic Pumps",
-    "Motherboards", "Fiber Optic Cables", "LED Displays",
-    "Industrial Solvents", "Polyethylene Granules", "Sulfuric Acid"
-]
+import pandas as pd
+import os
+
+csv_path = os.path.join(os.path.dirname(__file__), "../../../tradeos_master_ai_dataset_1000.csv")
+try:
+    df = pd.read_csv(csv_path)
+    COMMODITIES = df['commodity_name'].unique().tolist()
+except Exception as e:
+    print(f"Failed to load commodities from CSV for Live Feed: {e}")
+    COMMODITIES = ["Coffee", "Apparel", "Surgical Masks", "Semiconductors", "Wheat", "Motor Cars"]
+
 LOCATIONS = ["Germany", "UAE", "India", "Vietnam", "Brazil", "USA", "Singapore", "Netherlands", "Japan", "South Korea"]
 TYPES = ["IMPORT", "EXPORT", "IMPORT"] # Weight it slightly towards IMPORT
 
