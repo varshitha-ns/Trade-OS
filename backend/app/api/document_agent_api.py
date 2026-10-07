@@ -7,6 +7,8 @@ from typing import Dict, Any, List
 from app.agents.document_agent import document_agent
 from app.models.document_agent import TradePackage, TradeDocument
 from app.core.events import event_bus
+from app.models.document_agent import TradeContext
+from app.services.trade_knowledge_rag import answer_trade_knowledge_question
 
 router = APIRouter()
 
@@ -24,6 +26,15 @@ class DocumentAgentRequest(BaseModel):
     logistics_mode: str
     delivery_terms: str
     payment_terms: str
+
+
+@router.post("/requirements/rag")
+async def review_trade_requirements_with_sources(request: TradeContext):
+    """Optional, cited RAG review; does not modify generated documents or status."""
+    try:
+        return await answer_trade_knowledge_question(request)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Trade knowledge retrieval unavailable: {exc.__class__.__name__}")
 
 @router.post("/process")
 async def process_document_workflow(request: DocumentAgentRequest):
@@ -55,4 +66,3 @@ async def download_document(document_id: str):
         raise HTTPException(status_code=404, detail="Document not found.")
         
     return FileResponse(file_path, media_type="application/pdf", filename=f"{document_id}.pdf")
-

@@ -1,6 +1,11 @@
 import asyncio
+import logging
+import os
 from typing import Dict, Any, List
 from app.database import get_database
+from app.services.vector_retrieval import rank_texts
+
+logger = logging.getLogger(__name__)
 
 class BuyerMatchmakerAgent:
     """
@@ -23,9 +28,36 @@ class BuyerMatchmakerAgent:
 
         # Fetch all active RFQs (Trade Requests)
         rfqs = await db.trade_requests.find({"status": {"$ne": "fulfilled"}}).to_list(length=1000)
+
+        # Optional vector candidate signal. The existing rules remain the
+        # default and remain the final business-rule/ranking layer.
+        vector_scores = {}
+        vector_enabled = os.getenv("BUYER_MATCH_VECTOR_SEARCH_ENABLED", "false").strip().lower() in {
+            "1", "true", "yes", "on"
+        }
+        try:
+            vector_min_score = max(0.0, min(1.0, float(os.getenv("BUYER_MATCH_VECTOR_MIN_SCORE", "0.15"))))
+        except (TypeError, ValueError):
+            vector_min_score = 0.15
+        if vector_enabled and rfqs:
+            try:
+                query_text = " ".join(str(catalog_item.get(key) or "") for key in (
+                    "product_name", "description", "category", "hs_code"
+                ))
+                rfq_texts = [" ".join(str(rfq.get(key) or "") for key in (
+                    "product_name", "product_description", "product_category", "hs_code_suggestion"
+                )) for rfq in rfqs]
+                vector_scores = {
+                    item["index"]: item["score"]
+                    for item in rank_texts(query_text, rfq_texts, top_k=len(rfqs))
+                }
+            except Exception as exc:
+                # Retrieval is an optional enhancement; do not break the
+                # established deterministic match path if it is unavailable.
+                logger.warning("Buyer vector retrieval unavailable; using rule matching: %s", exc)
         
         scored_leads = []
-        for rfq in rfqs:
+        for rfq_index, rfq in enumerate(rfqs):
             score = 0.0
             explanation = []
             
@@ -67,16 +99,25 @@ class BuyerMatchmakerAgent:
                 if not overlap:
                     explanation.append("Category Level Match")
 
+            vector_similarity = vector_scores.get(rfq_index, 0.0)
+
             # HARD FILTER: If there is zero direct product relevance, drop it entirely.
             has_direct_match = bool(
                 overlap or 
                 (exporter_hs and rfq_hs and exporter_hs[:4] == rfq_hs[:4]) or 
-                (exporter_prod and rfq_prod and (exporter_prod in rfq_prod or rfq_prod in exporter_prod))
+                (exporter_prod and rfq_prod and (exporter_prod in rfq_prod or rfq_prod in exporter_prod)) or
+                (vector_enabled and vector_similarity >= vector_min_score)
             )
             
             if not has_direct_match:
                 continue
                 
+            if vector_enabled and vector_similarity > 0:
+                vector_points = vector_similarity * 50.0
+                if vector_points > semantic_score:
+                    semantic_score = vector_points
+                    explanation.append(f"Vector text similarity ({vector_similarity:.2f})")
+
             score += semantic_score
 
             # 2. Volume Match (Weight 20%)

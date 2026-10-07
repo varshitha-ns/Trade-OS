@@ -21,7 +21,7 @@ class CatalogAgent:
     def __init__(self):
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
-            print("⚠️ WARNING: GEMINI_API_KEY not found. Catalog Agent will fail.")
+            print("WARNING: GEMINI_API_KEY not found. Catalog Agent will fail.")
         
         try:
             os.environ["GOOGLE_API_KEY"] = api_key or ""
@@ -48,7 +48,7 @@ Description: {description}
             return {"success": False, "message": "LLM not initialized."}
         
         try:
-            print(f"\n🧠 [Catalog Agent] Classifying raw payload: '{description}'")
+            print(f"\n[Catalog Agent] Classifying raw payload: '{description}'")
             # invoke synchronously since ChatGoogleGenerativeAI async invocation might have issues
             # Or use ainvoke if supported. We will use invoke.
             structured_data = self.chain.invoke({"description": description})
@@ -59,7 +59,7 @@ Description: {description}
             print(f"   [Catalog Agent] Output: {structured_data}")
             return {"success": True, "catalog_item": structured_data}
         except Exception as e:
-            print(f"❌ [Catalog Agent] Failed: {e}")
+            print(f"[Catalog Agent] Failed: {e}")
             return {"success": False, "message": str(e)}
 
 catalog_agent = CatalogAgent()
